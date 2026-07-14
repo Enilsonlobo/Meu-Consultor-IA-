@@ -1,0 +1,6 @@
+{
+  "name": "Meu Consultor IA®",
+  "description": "Plataforma SaaS Premium de consultoria estratégica para micro e pequenas empresas baseada no Método CRESCER™.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
