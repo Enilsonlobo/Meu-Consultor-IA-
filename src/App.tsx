@@ -70,7 +70,22 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user: UserProfile | null) => {
       if (user) {
-        setCurrentUser(user);
+        let updatedUser = { ...user };
+        // If the user's email is the owner's email, ensure we do not show enilsonlobo32 on screen. Automatically set it to "Mestre".
+        if (
+          user.email && 
+          (user.email.toLowerCase() === "enilsonlobo32@gmail.com" || user.email.toLowerCase().includes("enilson")) && 
+          (!user.displayName || user.displayName.toLowerCase().includes("enilson"))
+        ) {
+          updatedUser.displayName = "Mestre";
+          // Actively sanitize and sync to the cloud database
+          try {
+            db.updateDoc("users", user.uid, { displayName: "Mestre" }).catch(() => {});
+          } catch (e) {
+            console.warn("Failed to auto-update display name in Firestore:", e);
+          }
+        }
+        setCurrentUser(updatedUser);
         // Load real-time SaaS collections for this tenant
         loadUserData(user.uid);
       } else {
@@ -424,7 +439,11 @@ Não foi possível estabelecer contato síncrono com a rede neural no momento. N
           // Auto scroll to top of view
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        userName={currentUser.displayName || currentUser.email}
+        userName={
+          currentUser.email?.toLowerCase() === "enilsonlobo32@gmail.com" || currentUser.displayName?.toLowerCase().includes("enilson")
+            ? "Mestre"
+            : (currentUser.displayName || currentUser.email)
+        }
         userRole={`${currentUser.plan || "Premium"} Member`}
         onLogout={() => {
           auth.signOut();

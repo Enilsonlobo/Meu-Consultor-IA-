@@ -340,7 +340,11 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
         <div className="space-y-4 relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/5 border border-indigo-500/10 text-indigo-400 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Olá, {profile.displayName || "Empresário"} — MEU CONSULTOR IA®</span>
+            <span>Olá, {
+              profile.email?.toLowerCase() === "enilsonlobo32@gmail.com" || profile.displayName?.toLowerCase().includes("enilson")
+                ? "Mestre"
+                : (profile.displayName || "Empresário")
+            } — MEU CONSULTOR IA®</span>
           </div>
 
           <div className="space-y-2">

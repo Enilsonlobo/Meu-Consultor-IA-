@@ -13,7 +13,18 @@ interface ProfileSectionProps {
 }
 
 export const ProfileSection: React.FC<ProfileSectionProps> = ({ profile, onSave }) => {
-  const [displayName, setDisplayName] = useState(profile.displayName || "");
+  const sanitizeName = (name: string, emailStr?: string) => {
+    const normEmail = (emailStr || "").toLowerCase();
+    if (normEmail === "enilsonlobo32@gmail.com" || normEmail.includes("enilson")) {
+      return "Mestre";
+    }
+    if (name.toLowerCase().includes("enilson")) {
+      return "Mestre";
+    }
+    return name;
+  };
+
+  const [displayName, setDisplayName] = useState(sanitizeName(profile.displayName || "", profile.email));
   const [empresa, setEmpresa] = useState(profile.empresa || "");
   const [cidade, setCidade] = useState(profile.cidade || "");
   const [telefone, setTelefone] = useState(profile.telefone || "");
@@ -22,6 +33,18 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ profile, onSave 
   const [funcionarios, setFuncionarios] = useState(profile.funcionarios || "");
   const [faturamento, setFaturamento] = useState(profile.faturamento || "");
   const [objetivos, setObjetivos] = useState(profile.objetivos || "");
+
+  React.useEffect(() => {
+    setDisplayName(sanitizeName(profile.displayName || "", profile.email));
+    setEmpresa(profile.empresa || "");
+    setCidade(profile.cidade || "");
+    setTelefone(profile.telefone || "");
+    setEmail(profile.email || "");
+    setSegmento(profile.segmento || "");
+    setFuncionarios(profile.funcionarios || "");
+    setFaturamento(profile.faturamento || "");
+    setObjetivos(profile.objetivos || "");
+  }, [profile]);
   
   const [loading, setLoading] = useState(false);
   const [savedMessage, setSavedMessage] = useState(false);
