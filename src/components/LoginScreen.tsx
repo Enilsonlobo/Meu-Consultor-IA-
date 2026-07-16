@@ -11,13 +11,20 @@ import { motion } from "motion/react";
 interface LoginScreenProps {
   onSuccess: () => void;
   onBackToLanding: () => void;
+  initialMode?: 'login' | 'signup' | 'forgot';
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLanding }) => {
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
+export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLanding, initialMode = 'login' }) => {
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>(initialMode);
+
+  React.useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -78,7 +85,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
     if (!targetEmail) {
       const promptEmail = window.prompt(
         "Insira seu e-mail do Google para efetuar o login corporativo premium:",
-        "enilsonlobo32@gmail.com"
+        "seu-email@gmail.com"
       );
       if (promptEmail === null) {
         // User cancelled
@@ -112,21 +119,23 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
   };
 
   return (
-    <div id="login-screen-root" className="min-h-screen bg-slate-900 flex flex-col justify-center items-center px-6 relative overflow-hidden">
+    <div id="login-screen-root" className="min-h-screen bg-slate-900 flex flex-col justify-start md:justify-center items-center px-4 md:px-6 py-8 md:py-16 relative overflow-y-auto">
       
       {/* Decorative Blur Backgrounds */}
       <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Brand Launcher Logo */}
-      <button
-        id="btn-login-back-landing"
-        onClick={onBackToLanding}
-        className="absolute top-8 left-8 flex items-center gap-2 text-xs text-slate-400 hover:text-white font-semibold transition-colors outline-none"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span>Voltar para a Landing Page</span>
-      </button>
+      <div className="w-full max-w-md flex justify-start mb-6 z-20 md:absolute md:top-8 md:left-8 md:mb-0 md:w-auto">
+        <button
+          id="btn-login-back-landing"
+          onClick={onBackToLanding}
+          className="flex items-center gap-2 text-xs text-slate-400 hover:text-white font-semibold transition-colors outline-none cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Voltar para a Landing Page</span>
+        </button>
+      </div>
 
       {/* Main Login Card Layout */}
       <motion.div
@@ -134,7 +143,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md bg-slate-950/80 border border-slate-800 rounded-3xl p-8 md:p-10 shadow-2xl relative z-10 backdrop-blur-md"
+        className="w-full max-w-md bg-slate-950/80 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl relative z-10 backdrop-blur-md md:my-auto my-4"
       >
         {/* Brand Banner */}
         <div className="text-center mb-8 space-y-2">
@@ -146,10 +155,48 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
           </h2>
           <p className="text-slate-400 text-xs">
             {mode === 'login' && "Acesse sua conta para continuar sua consultoria empresarial."}
-            {mode === 'signup' && "Cadastre sua empresa e inicie o Método CRESCER™."}
+            {mode === 'signup' && "Crie e registre sua senha de acesso para o seu e-mail liberado."}
             {mode === 'forgot' && "Digite seu e-mail para recuperar seu acesso corporativo."}
           </p>
         </div>
+
+        {/* Navigation Tabs for Login and Sign up */}
+        {mode !== 'forgot' && (
+          <div className="flex bg-slate-900 p-1 rounded-xl mb-6 border border-slate-800">
+            <button
+              id="tab-login-btn"
+              type="button"
+              onClick={() => {
+                setError(null);
+                setMessage(null);
+                setMode('login');
+              }}
+              className={`flex-1 py-2.5 text-[11px] sm:text-xs font-bold px-1 rounded-lg transition-all cursor-pointer outline-none ${
+                mode === 'login' 
+                  ? 'bg-indigo-600 text-white shadow-md' 
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Acessar Minha Conta
+            </button>
+            <button
+              id="tab-signup-btn"
+              type="button"
+              onClick={() => {
+                setError(null);
+                setMessage(null);
+                setMode('signup');
+              }}
+              className={`flex-1 py-2.5 text-[11px] sm:text-xs font-bold px-1 rounded-lg transition-all cursor-pointer outline-none ${
+                mode === 'signup' 
+                  ? 'bg-indigo-600 text-white shadow-md' 
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Cadastrar Minha Senha
+            </button>
+          </div>
+        )}
 
         {/* Alert Notifications */}
         {error && (
@@ -194,7 +241,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
                 </span>
                 <input
                   id="login-password-input"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Sua senha secreta"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -213,13 +260,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
                 </span>
                 <input
                   id="login-confirm-password-input"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Repita sua senha secreta"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl text-sm focus:outline-none placeholder-slate-600 text-slate-200"
                 />
               </div>
+            </div>
+          )}
+
+          {/* Show Password Option */}
+          {mode !== 'forgot' && (
+            <div className="flex items-center pt-1 pb-1">
+              <input
+                id="checkbox-show-password"
+                type="checkbox"
+                checked={showPassword}
+                onChange={(e) => setShowPassword(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 bg-slate-900 border-slate-800 rounded focus:ring-indigo-500 focus:ring-offset-slate-900 cursor-pointer"
+              />
+              <label htmlFor="checkbox-show-password" className="ml-2 text-xs text-slate-400 hover:text-slate-300 cursor-pointer select-none">
+                Mostrar caracteres da senha
+              </label>
             </div>
           )}
 
@@ -230,9 +293,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
                 id="btn-forgot-password-trigger"
                 type="button"
                 onClick={() => setMode('forgot')}
-                className="text-xs text-slate-400 hover:text-indigo-400 transition-colors"
+                className="text-xs text-slate-400 hover:text-indigo-400 transition-colors cursor-pointer outline-none"
               >
-                Esqueci minha senha
+                Esqueceu sua senha?
               </button>
             </div>
           )}
@@ -242,15 +305,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
             id="btn-auth-submit"
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white font-semibold rounded-xl text-sm shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 transition-all"
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white font-semibold rounded-xl text-sm shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
-            <span>{loading ? "Processando..." : mode === 'login' ? "Entrar na Plataforma" : mode === 'signup' ? "Cadastrar Minha Empresa" : "Enviar Link de Recuperação"}</span>
+            <span>{loading ? "Processando..." : mode === 'login' ? "Entrar na Plataforma" : mode === 'signup' ? "Cadastrar Minha Senha & Entrar" : "Enviar Link de Recuperação"}</span>
             {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
 
         {/* Divider and Google Login */}
-        {mode === 'login' && (
+        {(mode === 'login' || mode === 'signup') && (
           <div className="mt-6 space-y-4">
             <div className="flex items-center gap-3">
               <hr className="flex-1 border-slate-800" />
@@ -261,7 +324,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
             <button
               id="btn-google-auth"
               onClick={handleGoogleLogin}
-              className="w-full py-2.5 bg-slate-900 hover:bg-slate-850 text-slate-200 border border-slate-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm"
+              className="w-full py-2.5 bg-slate-900 hover:bg-slate-850 text-slate-200 border border-slate-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -281,17 +344,63 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <span>Entrar com o Google</span>
+              <span>{mode === 'signup' ? "Cadastrar com o Google" : "Entrar com o Google"}</span>
             </button>
           </div>
         )}
 
         {/* Auth mode switches */}
-        <div className="mt-8 text-center text-xs text-slate-400 space-y-2">
-          {mode === 'forgot' && (
-            <p>
-              <button id="btn-switch-login" onClick={() => setMode('login')} className="font-bold text-indigo-400 hover:underline">
+        <div className="mt-8 text-center text-xs text-slate-400 space-y-3 border-t border-slate-900 pt-6">
+          {mode === 'login' && (
+            <p className="text-slate-500">
+              Primeiro acesso ou sem senha cadastrada?{" "}
+              <button
+                id="btn-switch-signup"
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setMessage(null);
+                  setMode('signup');
+                }}
+                className="font-bold text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer outline-none ml-1"
+              >
+                Cadastre sua Senha aqui
+              </button>
+            </p>
+          )}
+
+          {mode === 'signup' && (
+            <p className="text-slate-500">
+              Já possui sua senha cadastrada?{" "}
+              <button
+                id="btn-switch-login-from-signup"
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setMessage(null);
+                  setMode('login');
+                }}
+                className="font-bold text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer outline-none ml-1"
+              >
                 Acessar Minha Conta
+              </button>
+            </p>
+          )}
+
+          {mode === 'forgot' && (
+            <p className="text-slate-500">
+              Lembrou sua senha?{" "}
+              <button
+                id="btn-switch-login-from-forgot"
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setMessage(null);
+                  setMode('login');
+                }}
+                className="font-bold text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer outline-none ml-1"
+              >
+                Voltar para o Login
               </button>
             </p>
           )}

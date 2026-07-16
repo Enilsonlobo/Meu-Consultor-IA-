@@ -81,14 +81,22 @@ export const ALWAYS_ALLOWED_EMAILS = [
 
 const seedDefaultDbSettings = () => {
   const whitelistKey = DB_WHITELIST_KEY;
-  const currentWhitelist = JSON.parse(localStorage.getItem(whitelistKey) || "[]");
+  let currentWhitelist = JSON.parse(localStorage.getItem(whitelistKey) || "[]");
+  
+  // Active migration: filter out any old occurrences of the owner's personal email from the visible local database list
+  const filteredWhitelist = currentWhitelist.filter(
+    (item: any) => item && item.email && item.email.toLowerCase() !== "enilsonlobo32@gmail.com"
+  );
+  
   if (currentWhitelist.length === 0) {
     const initialWhitelist = [
-      { id: "wl-1", email: "enilsonlobo32@gmail.com", name: "Enilson Lobo (Dono)" },
+      { id: "wl-1", email: "mestre@consultoria.com.br", name: "Meu Consultor IA (Dono)" },
       { id: "wl-2", email: "admin@consultoria.com.br", name: "Administrador Geral" },
       { id: "wl-3", email: "empresa@consultoria.com.br", name: "Usuário de Demonstração" },
     ];
     localStorage.setItem(whitelistKey, JSON.stringify(initialWhitelist));
+  } else if (filteredWhitelist.length !== currentWhitelist.length) {
+    localStorage.setItem(whitelistKey, JSON.stringify(filteredWhitelist));
   }
 
   const settingsKey = DB_SETTINGS_KEY;
@@ -110,13 +118,13 @@ const defaultTrialUser = {
   uid: "trial-owner-123",
   email: "empresa@consultoria.com.br",
   displayName: "Roberto Albuquerque",
-  empresa: "Albuquerque Alimentos Ltda.",
-  segmento: "Alimentício & Restaurantes",
-  cidade: "São Paulo",
+  empresa: "Autoescola Exemplo",
+  segmento: "Educação para formação de condutores",
+  cidade: "Angra dos Reis – RJ",
   telefone: "(11) 98765-4321",
   funcionarios: "12 funcionários",
   faturamento: "R$ 45.000 / mês",
-  objetivos: "Otimizar o fluxo de caixa, treinar atendentes e expandir presença digital local.",
+  objetivos: "Aumentar matrículas",
   scoreCrescer: 72,
   ultimoAcesso: new Date().toLocaleDateString('pt-BR'),
   ultimoDiagnostico: "14/07/2026",
@@ -130,7 +138,54 @@ const defaultTrialUser = {
     comunicacao: 85,
     eficiencia: 65,
     resultados: 70
-  }
+  },
+  hasCompletedInitialDiag: true,
+  initialDiagAnswers: {
+    empresa: "Autoescola Exemplo",
+    segmento: "Educação para formação de condutores",
+    mercado: "Serviços locais",
+    cidade: "Angra dos Reis",
+    uf: "RJ",
+    publicoPredominante: "18 a 35 anos",
+    principalObjetivo: "Aumentar matrículas",
+    maiorGargalo: "Baixa geração de leads pelo Instagram e poucas avaliações no Google.",
+    nivelMaturidadeDigital: 7,
+    nivelOrganizacaoComercial: 6,
+    prioridadeEstrategica: "Marketing e Conversão"
+  },
+  initialDiagReport: `📋 PERFIL ESTRATÉGICO DA EMPRESA
+
+Empresa: Autoescola Exemplo
+
+Segmento:
+Educação para formação de condutores
+
+Mercado:
+Serviços locais
+
+Cidade:
+Angra dos Reis – RJ
+
+Público predominante:
+18 a 35 anos
+
+Principal objetivo:
+Aumentar matrículas
+
+Maior gargalo:
+Baixa geração de leads pelo Instagram e poucas avaliações no Google.
+
+Nível de maturidade digital:
+7/10
+
+Nível de organização comercial:
+6/10
+
+Prioridade estratégica:
+Marketing e Conversão.
+
+Próxima etapa recomendada:
+Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`
 };
 
 // Seed simulated db helper
@@ -149,12 +204,12 @@ class MockAuth {
 
   constructor() {
     try {
-      const savedUser = sessionStorage.getItem(CURRENT_USER_KEY) || localStorage.getItem(CURRENT_USER_KEY);
+      // Clean up legacy localStorage current user
+      localStorage.removeItem(CURRENT_USER_KEY);
+      
+      const savedUser = sessionStorage.getItem(CURRENT_USER_KEY);
       if (savedUser) {
         this.currentUser = JSON.parse(savedUser);
-        // Migrate to sessionStorage and remove from localStorage to enforce session limits
-        sessionStorage.setItem(CURRENT_USER_KEY, savedUser);
-        localStorage.removeItem(CURRENT_USER_KEY);
       } else {
         // Do not auto-login to force users to use landing & credentials screen
         this.currentUser = null;
@@ -181,47 +236,11 @@ class MockAuth {
     let user = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
     
     if (!user) {
-      // Auto-create on the fly to prevent any lockout and offer immediate premium access!
-      const userDisplay = email.split("@")[0];
-      const capitalizedDisplay = userDisplay.charAt(0).toUpperCase() + userDisplay.slice(1);
-      
-      const newUser = {
-        uid: "usr-" + Math.random().toString(36).substring(7),
-        email: email,
-        displayName: capitalizedDisplay,
-        empresa: "Minha Empresa S.A.",
-        segmento: "Consultoria & Serviços",
-        cidade: "São Paulo",
-        telefone: "",
-        funcionarios: "1 a 5",
-        faturamento: "Não informado",
-        objetivos: "Otimizar o fluxo de caixa, treinar atendentes e expandir presença digital local.",
-        scoreCrescer: 72,
-        ultimoAcesso: new Date().toLocaleDateString('pt-BR'),
-        ultimoDiagnostico: "Nunca",
-        plan: "Premium",
-        createdAt: new Date().toLocaleDateString('pt-BR'),
-        password: pass,
-        pillars: {
-          conhecimento: 75,
-          relacionamento: 70,
-          estrategia: 60,
-          sistema: 65,
-          comunicacao: 80,
-          eficiencia: 55,
-          resultados: 60
-        }
-      };
-      users.push(newUser);
-      setLocalUsers(users);
-      user = newUser;
-    } else {
-      // If user exists but enters a different password, we update/accept it to prevent lockout
-      if (user.password && user.password !== pass) {
-        user.password = pass;
-        const updatedUsers = users.map((u: any) => u.uid === user.uid ? user : u);
-        setLocalUsers(updatedUsers);
-      }
+      throw new Error("E-mail ou senha incorretos. Se este for seu primeiro acesso, clique na aba 'Cadastrar Minha Senha' no topo do formulário para registrar sua senha de acesso.");
+    }
+
+    if (user.password && user.password !== pass) {
+      throw new Error("Senha incorreta. Se você esqueceu sua senha, utilize a redefinição.");
     }
 
     const { password, ...safeUser } = user;
@@ -237,32 +256,83 @@ class MockAuth {
       throw new Error("E-mail já está em uso por outra conta.");
     }
 
+    const defaultAnswers = {
+      empresa: "Autoescola Exemplo",
+      segmento: "Educação para formação de condutores",
+      mercado: "Serviços locais",
+      cidade: "Angra dos Reis",
+      uf: "RJ",
+      publicoPredominante: "18 a 35 anos",
+      principalObjetivo: "Aumentar matrículas",
+      maiorGargalo: "Baixa geração de leads pelo Instagram e poucas avaliações no Google.",
+      nivelMaturidadeDigital: 7,
+      nivelOrganizacaoComercial: 6,
+      prioridadeEstrategica: "Marketing e Conversão"
+    };
+
+    const defaultReport = `📋 PERFIL ESTRATÉGICO DA EMPRESA
+
+Empresa: Autoescola Exemplo
+
+Segmento:
+Educação para formação de condutores
+
+Mercado:
+Serviços locais
+
+Cidade:
+Angra dos Reis – RJ
+
+Público predominante:
+18 a 35 anos
+
+Principal objetivo:
+Aumentar matrículas
+
+Maior gargalo:
+Baixa geração de leads pelo Instagram e poucas avaliações no Google.
+
+Nível de maturidade digital:
+7/10
+
+Nível de organização comercial:
+6/10
+
+Prioridade estratégica:
+Marketing e Conversão.
+
+Próxima etapa recomendada:
+Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
+
     const newUser = {
       uid: "usr-" + Math.random().toString(36).substring(7),
       email: email,
       displayName: email.split("@")[0],
-      empresa: "Minha Empresa",
-      segmento: "Outros",
-      cidade: "São Paulo",
+      empresa: "Autoescola Exemplo",
+      segmento: "Educação para formação de condutores",
+      cidade: "Angra dos Reis – RJ",
       telefone: "",
       funcionarios: "1 a 5",
       faturamento: "Não informado",
-      objetivos: "Crescer faturamento",
-      scoreCrescer: 0,
+      objetivos: "Aumentar matrículas",
+      scoreCrescer: 72,
       ultimoAcesso: new Date().toLocaleDateString('pt-BR'),
-      ultimoDiagnostico: "Nunca",
-      plan: "Membro" as const,
+      ultimoDiagnostico: new Date().toLocaleDateString('pt-BR'),
+      plan: "Premium" as const,
       createdAt: new Date().toLocaleDateString('pt-BR'),
       password: pass,
       pillars: {
-        conhecimento: 0,
-        relacionamento: 0,
-        estrategia: 0,
-        sistema: 0,
-        comunicacao: 0,
-        eficiencia: 0,
-        resultados: 0
-      }
+        conhecimento: 70,
+        relacionamento: 65,
+        estrategia: 60,
+        sistema: 55,
+        comunicacao: 75,
+        eficiencia: 50,
+        resultados: 60
+      },
+      hasCompletedInitialDiag: true,
+      initialDiagAnswers: defaultAnswers,
+      initialDiagReport: defaultReport
     };
 
     users.push(newUser);
@@ -523,7 +593,7 @@ class FirebaseAuthAdapter {
   async signInWithEmailAndPassword(email: string, pass: string) {
     const isAllowed = await checkEmailAuthorization(email);
     if (!isAllowed) {
-      throw new Error("Acesso Não Autorizado: Este e-mail não foi liberado para testes por Enilson Lobo. Entre em contato para solicitar acesso.");
+      throw new Error("Acesso Restrito: Este e-mail não possui liberação ativa para a plataforma Meu Consultor IA®. Entre em contato com a equipe de suporte para habilitar seu acesso.");
     }
 
     if (usingMock || !firebaseAuth) {
@@ -533,19 +603,19 @@ class FirebaseAuthAdapter {
         const res = await signInWithEmailAndPassword(firebaseAuth, email, pass);
         return { user: res.user };
       } catch (err: any) {
-        // Auto-create user on the fly if invalid credentials/not found, matching our seamless login behavior!
-        if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
-          try {
-            const res = await createUserWithEmailAndPassword(firebaseAuth, email, pass);
-            return { user: res.user };
-          } catch (createErr) {
-            console.error("Firebase Auth create failed, falling back to local memory authentication:", createErr);
-            usingMock = true;
-            this.initAuth();
-            return mockAuthInstance.signInWithEmailAndPassword(email, pass);
-          }
+        console.error("Erro ao autenticar no Firebase:", err);
+        // If it's a real authentication credential error, throw the error directly to the user
+        if (
+          err.code === "auth/wrong-password" || 
+          err.code === "auth/invalid-credential" || 
+          err.code === "auth/user-not-found" ||
+          err.code === "auth/invalid-email"
+        ) {
+          throw new Error("E-mail ou senha incorretos. Se este for seu primeiro acesso, clique na aba 'Cadastrar Minha Senha' no topo do formulário para registrar sua senha de acesso.");
         }
-        console.error("Firebase Auth signin failed, falling back to local memory authentication:", err);
+        
+        // Otherwise, it might be a connectivity/initialization fallback
+        console.warn("Conexão falhou, caindo de volta para a camada local temporária.");
         usingMock = true;
         this.initAuth();
         return mockAuthInstance.signInWithEmailAndPassword(email, pass);
@@ -556,7 +626,7 @@ class FirebaseAuthAdapter {
   async createUserWithEmailAndPassword(email: string, pass: string) {
     const isAllowed = await checkEmailAuthorization(email);
     if (!isAllowed) {
-      throw new Error("Acesso Não Autorizado: Este e-mail não foi liberado para testes por Enilson Lobo. Entre em contato para solicitar acesso.");
+      throw new Error("Acesso Restrito: Este e-mail não possui liberação ativa para a plataforma Meu Consultor IA®. Entre em contato com a equipe de suporte para habilitar seu acesso.");
     }
 
     if (usingMock || !firebaseAuth) {
@@ -565,7 +635,10 @@ class FirebaseAuthAdapter {
       try {
         const res = await createUserWithEmailAndPassword(firebaseAuth, email, pass);
         return { user: res.user };
-      } catch (err) {
+      } catch (err: any) {
+        if (err.code === "auth/email-already-in-use") {
+          throw new Error("Este e-mail já possui uma conta cadastrada. Por favor, acesse utilizando a tela de login.");
+        }
         console.error("Firebase Auth signup failed, falling back to local memory signup:", err);
         usingMock = true;
         this.initAuth();

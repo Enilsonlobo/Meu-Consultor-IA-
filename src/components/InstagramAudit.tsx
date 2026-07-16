@@ -24,7 +24,8 @@ import {
   FileText,
   Share2,
   Lock,
-  ArrowRight
+  ArrowRight,
+  ExternalLink
 } from "lucide-react";
 import { motion } from "motion/react";
 import Markdown from "react-markdown";
@@ -524,9 +525,18 @@ export const InstagramAudit: React.FC<InstagramAuditProps> = ({ profile }) => {
                       type="text"
                       readOnly
                       value={`${window.location.origin}/?audit=${selectedSession.id}`}
-                      className="px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-[11px] text-indigo-300 font-mono font-medium focus:outline-none w-full md:w-72 shadow-inner"
+                      className="px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-[11px] text-indigo-300 font-mono font-medium focus:outline-none w-full md:w-56 shadow-inner"
                       onClick={(e) => (e.target as HTMLInputElement).select()}
                     />
+                    <a
+                      href={`${window.location.origin}/?audit=${selectedSession.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 rounded-xl text-slate-400 hover:text-white transition-all flex items-center justify-center shrink-0 cursor-pointer"
+                      title="Abrir em Nova Aba"
+                    >
+                      <ExternalLink className="w-4 h-4 text-indigo-400" />
+                    </a>
                     <button
                       onClick={() => triggerCopy(`${window.location.origin}/?audit=${selectedSession.id}`, "share-link")}
                       className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-md shadow-indigo-600/10"

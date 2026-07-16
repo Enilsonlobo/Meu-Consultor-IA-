@@ -41,7 +41,7 @@ export default function App() {
   // Authentication & session state
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
-  const [authScreen, setAuthScreen] = useState<'landing' | 'login'>('landing');
+  const [authScreen, setAuthScreen] = useState<'landing' | 'login' | 'signup'>('landing');
   const [publicAuditId, setPublicAuditId] = useState<string | null>(null);
 
   // Parse URL search parameters on load
@@ -396,13 +396,14 @@ Não foi possível estabelecer contato síncrono com a rede neural no momento. N
     if (authScreen === 'landing') {
       return (
         <LandingPage 
-          onStart={() => setAuthScreen('login')} 
+          onStart={() => setAuthScreen('signup')} 
           onLogin={() => setAuthScreen('login')} 
         />
       );
     }
     return (
       <LoginScreen 
+        initialMode={authScreen === 'signup' ? 'signup' : 'login'}
         onSuccess={() => setAuthScreen('landing')} 
         onBackToLanding={() => setAuthScreen('landing')} 
       />
@@ -441,6 +442,7 @@ Não foi possível estabelecer contato síncrono com a rede neural no momento. N
               setActiveTab(tab);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }} 
+            onSaveProfile={handleSaveProfile}
           />
         )}
 

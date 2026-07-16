@@ -45,6 +45,21 @@ export interface UserProfile {
   plan: 'Membro' | 'Premium' | 'Enterprise';
   createdAt: string;
   pillars?: CrescerPillars;
+  hasCompletedInitialDiag?: boolean;
+  initialDiagAnswers?: {
+    empresa: string;
+    segmento: string;
+    mercado: string;
+    cidade: string;
+    uf: string;
+    publicoPredominante: string;
+    principalObjetivo: string;
+    maiorGargalo: string;
+    nivelMaturidadeDigital: number;
+    nivelOrganizacaoComercial: number;
+    prioridadeEstrategica: string;
+  };
+  initialDiagReport?: string;
 }
 
 export interface Message {

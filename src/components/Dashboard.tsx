@@ -19,16 +19,22 @@ import {
   MapPin, 
   ArrowRight,
   Palette,
-  CheckSquare
+  CheckSquare,
+  Copy,
+  Check,
+  X,
+  Sliders,
+  BarChart3
 } from "lucide-react";
 import { SidebarTab } from "./Sidebar";
 
 interface DashboardProps {
   profile: UserProfile;
   onTabChange: (tab: SidebarTab) => void;
+  onSaveProfile: (updatedFields: Partial<UserProfile>) => Promise<void>;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange, onSaveProfile }) => {
   const pillars: CrescerPillars = profile.pillars || {
     conhecimento: 0,
     relacionamento: 0,
@@ -37,6 +43,116 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) =>
     comunicacao: 0,
     eficiencia: 0,
     resultados: 0
+  };
+
+  const [showInitialDiagModal, setShowInitialDiagModal] = React.useState(false);
+  const [empresaInput, setEmpresaInput] = React.useState(profile.initialDiagAnswers?.empresa || profile.empresa || "");
+  const [segmentoInput, setSegmentoInput] = React.useState(profile.initialDiagAnswers?.segmento || profile.segmento || "");
+  const [mercadoInput, setMercadoInput] = React.useState(profile.initialDiagAnswers?.mercado || "Serviços locais");
+  const [cidadeInput, setCidadeInput] = React.useState(profile.initialDiagAnswers?.cidade || profile.cidade || "");
+  const [ufInput, setUfInput] = React.useState(profile.initialDiagAnswers?.uf || "RJ");
+  const [publicoInput, setPublicoInput] = React.useState(profile.initialDiagAnswers?.publicoPredominante || "");
+  const [objetivoInput, setObjetivoInput] = React.useState(profile.initialDiagAnswers?.principalObjetivo || "");
+  const [gargaloInput, setGargaloInput] = React.useState(profile.initialDiagAnswers?.maiorGargalo || "");
+  const [matDigital, setMatDigital] = React.useState(profile.initialDiagAnswers?.nivelMaturidadeDigital ?? 7);
+  const [orgComercial, setOrgComercial] = React.useState(profile.initialDiagAnswers?.nivelOrganizacaoComercial ?? 6);
+  const [prioridadeInput, setPrioridadeInput] = React.useState(profile.initialDiagAnswers?.prioridadeEstrategica || "Marketing e Conversão");
+
+  const [savingDiag, setSavingDiag] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+
+  React.useEffect(() => {
+    if (profile) {
+      setEmpresaInput(profile.initialDiagAnswers?.empresa || profile.empresa || "");
+      setSegmentoInput(profile.initialDiagAnswers?.segmento || profile.segmento || "");
+      setMercadoInput(profile.initialDiagAnswers?.mercado || "Serviços locais");
+      setCidadeInput(profile.initialDiagAnswers?.cidade?.split(" – ")[0] || profile.cidade || "");
+      setUfInput(profile.initialDiagAnswers?.uf || profile.cidade?.split(" – ")[1] || "RJ");
+      setPublicoInput(profile.initialDiagAnswers?.publicoPredominante || "");
+      setObjetivoInput(profile.initialDiagAnswers?.principalObjetivo || profile.objetivos || "");
+      setGargaloInput(profile.initialDiagAnswers?.maiorGargalo || "");
+      setMatDigital(profile.initialDiagAnswers?.nivelMaturidadeDigital ?? 7);
+      setOrgComercial(profile.initialDiagAnswers?.nivelOrganizacaoComercial ?? 6);
+      setPrioridadeInput(profile.initialDiagAnswers?.prioridadeEstrategica || "Marketing e Conversão");
+    }
+  }, [profile]);
+
+  const handleCopyReport = () => {
+    if (profile.initialDiagReport) {
+      navigator.clipboard.writeText(profile.initialDiagReport);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleSaveInitialDiag = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingDiag(true);
+    
+    const answers = {
+      empresa: empresaInput,
+      segmento: segmentoInput,
+      mercado: mercadoInput,
+      cidade: cidadeInput,
+      uf: ufInput,
+      publicoPredominante: publicoInput,
+      principalObjetivo: objetivoInput,
+      maiorGargalo: gargaloInput,
+      nivelMaturidadeDigital: matDigital,
+      nivelOrganizacaoComercial: orgComercial,
+      prioridadeEstrategica: prioridadeInput
+    };
+
+    const reportText = `📋 PERFIL ESTRATÉGICO DA EMPRESA
+
+Empresa: ${answers.empresa}
+
+Segmento:
+${answers.segmento}
+
+Mercado:
+${answers.mercado}
+
+Cidade:
+${answers.cidade} – ${answers.uf}
+
+Público predominante:
+${answers.publicoPredominante}
+
+Principal objetivo:
+${answers.principalObjetivo}
+
+Maior gargalo:
+${answers.maiorGargalo}
+
+Nível de maturidade digital:
+${answers.nivelMaturidadeDigital}/10
+
+Nível de organização comercial:
+${answers.nivelOrganizacaoComercial}/10
+
+Prioridade estratégica:
+${answers.prioridadeEstrategica}.
+
+Próxima etapa recomendada:
+Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
+
+    try {
+      await onSaveProfile({
+        empresa: answers.empresa,
+        segmento: answers.segmento,
+        cidade: `${answers.cidade} – ${answers.uf}`,
+        objetivos: answers.principalObjetivo,
+        hasCompletedInitialDiag: true,
+        initialDiagAnswers: answers,
+        initialDiagReport: reportText
+      });
+      setShowInitialDiagModal(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingDiag(false);
+    }
   };
 
   const getScoreColorClass = (score: number) => {
@@ -100,6 +216,123 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) =>
   return (
     <div id="dashboard-tab-root" className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
       
+      {/* 📋 INICIAL DIAGNOSIS SECTION (BOTAO DE ACESSO INTUITIVO & PERFIL ESTRATÉGICO) */}
+      {!profile.hasCompletedInitialDiag ? (
+        <div className="bg-gradient-to-r from-indigo-950 via-slate-950 to-indigo-900 border-2 border-indigo-500 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+                <span>Passo 1: Comece por Aqui</span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight leading-tight">
+                Defina o seu Diagnóstico Inicial Inteligente 🚀
+              </h2>
+              <p className="text-xs md:text-sm text-slate-400 font-medium max-w-2xl leading-relaxed">
+                Antes de iniciar as outras ferramentas, calibre o seu <strong>Meu Consultor IA®</strong>. 
+                Gere o seu <strong>Perfil Estratégico Corporativo</strong> oficial para liberar recomendações personalizadas imediatamente.
+              </p>
+            </div>
+            <button
+              id="btn-trigger-initial-diag"
+              onClick={() => setShowInitialDiagModal(true)}
+              className="px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all uppercase tracking-wider shrink-0 cursor-pointer border border-indigo-400/20 active:scale-[0.98]"
+            >
+              <span>Realizar Diagnóstico Inicial</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-b from-slate-950 to-slate-950/80 border border-slate-900 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-indigo-600/10 text-indigo-400 rounded-xl border border-indigo-500/20">
+                <Target className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-extrabold text-white tracking-tight">📋 PERFIL ESTRATÉGICO DA EMPRESA</h2>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Visão Executiva de Diagnóstico Inteligente</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                id="btn-copy-strat-profile"
+                onClick={handleCopyReport}
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-300 hover:text-white rounded-xl border border-slate-800 text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-indigo-400" />}
+                <span>{copied ? "Copiado!" : "Copiar Perfil"}</span>
+              </button>
+              <button
+                id="btn-update-strat-profile"
+                onClick={() => setShowInitialDiagModal(true)}
+                className="px-3 py-1.5 bg-slate-900/50 hover:bg-slate-900 text-slate-400 hover:text-slate-300 rounded-xl border border-slate-800/80 text-xs font-bold transition-all"
+              >
+                Atualizar Ficha
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 text-xs font-medium">
+            <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-1">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Empresa</span>
+              <span className="text-white font-extrabold text-sm">{profile.initialDiagAnswers?.empresa}</span>
+            </div>
+            <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-1">
+              <span className="text-[10px] text-indigo-400/80 font-bold uppercase tracking-wider block">Segmento</span>
+              <span className="text-indigo-400 font-extrabold text-sm">{profile.initialDiagAnswers?.segmento}</span>
+            </div>
+            <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-1">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Mercado</span>
+              <span className="text-white font-extrabold text-sm">{profile.initialDiagAnswers?.mercado}</span>
+            </div>
+            <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-1">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Cidade / UF</span>
+              <span className="text-white font-extrabold text-sm">{profile.initialDiagAnswers?.cidade} – {profile.initialDiagAnswers?.uf}</span>
+            </div>
+            <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-1">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Público Predominante</span>
+              <span className="text-white font-extrabold text-sm">{profile.initialDiagAnswers?.publicoPredominante}</span>
+            </div>
+            <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-1">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Principal Objetivo</span>
+              <span className="text-white font-extrabold text-sm">{profile.initialDiagAnswers?.principalObjetivo}</span>
+            </div>
+            <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-1 md:col-span-2">
+              <span className="text-[10px] text-rose-400/80 font-bold uppercase tracking-wider block">Maior Gargalo</span>
+              <span className="text-rose-400 font-extrabold text-xs">{profile.initialDiagAnswers?.maiorGargalo}</span>
+            </div>
+            <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-1 text-center">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Maturidade Digital</span>
+              <span className="text-indigo-400 font-black text-lg block">{profile.initialDiagAnswers?.nivelMaturidadeDigital}/10</span>
+            </div>
+            <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-1 text-center">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Organização Comercial</span>
+              <span className="text-indigo-400 font-black text-lg block">{profile.initialDiagAnswers?.nivelOrganizacaoComercial}/10</span>
+            </div>
+            <div className="p-4 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-1">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Prioridade Estratégica</span>
+              <span className="text-indigo-400 font-extrabold text-sm">{profile.initialDiagAnswers?.prioridadeEstrategica}</span>
+            </div>
+            <div className="p-4 bg-indigo-500/5 border border-indigo-500/15 rounded-2xl space-y-1 flex flex-col justify-center">
+              <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block">Próxima Etapa</span>
+              <span className="text-indigo-300 font-bold text-[11px] leading-tight">Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.</span>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/50 p-4 border border-slate-900/80 rounded-2xl space-y-1.5 relative">
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Resumo Executivo Gerado Automaticamente (Copiável)</span>
+            <pre className="text-[11px] font-mono text-slate-300 bg-slate-950 p-4 rounded-xl overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto border border-slate-900 scrollbar-thin">
+              {profile.initialDiagReport}
+            </pre>
+          </div>
+        </div>
+      )}
+
       {/* Top Header Card */}
       <div className="bg-gradient-to-b from-slate-950 to-slate-950/90 border border-slate-900/80 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
@@ -351,6 +584,266 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) =>
           })}
         </div>
       </div>
+
+      {/* 📋 MODAL DE DIAGNÓSTICO INICIAL */}
+      {showInitialDiagModal && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl relative my-8 scrollbar-thin">
+            
+            {/* Close Button */}
+            <button
+              id="btn-close-initial-diag-modal"
+              onClick={() => setShowInitialDiagModal(false)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-indigo-400">
+                <Target className="w-5 h-5" />
+                <span className="text-xs font-bold uppercase tracking-wider">Diagnóstico Inicial de Negócio</span>
+              </div>
+              <h2 className="text-2xl font-black text-white tracking-tight">Ficha Estratégica da Sua Empresa</h2>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Responda com sinceridade estas 10 perguntas essenciais para calibrar o <strong>Meu Consultor IA®</strong> e gerar seu Perfil Estratégico Corporativo.
+              </p>
+              
+              {/* Preset example button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  id="btn-fill-preset-autoescola"
+                  onClick={() => {
+                    setEmpresaInput("Autoescola Exemplo");
+                    setSegmentoInput("Educação para formação de condutores");
+                    setMercadoInput("Serviços locais");
+                    setCidadeInput("Angra dos Reis");
+                    setUfInput("RJ");
+                    setPublicoInput("18 a 35 anos");
+                    setObjetivoInput("Aumentar matrículas");
+                    setGargaloInput("Baixa geração de leads pelo Instagram e poucas avaliações no Google.");
+                    setMatDigital(7);
+                    setOrgComercial(6);
+                    setPrioridadeInput("Marketing e Conversão");
+                  }}
+                  className="px-3 py-1 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/15 rounded-lg text-[10px] font-bold transition-all uppercase tracking-wider"
+                >
+                  ✨ Preencher com Exemplo Prático (Autoescola)
+                </button>
+              </div>
+            </div>
+
+            <hr className="border-slate-800" />
+
+            {/* Form */}
+            <form id="initial-diag-form" onSubmit={handleSaveInitialDiag} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                {/* Empresa */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Nome da Empresa</label>
+                  <input
+                    id="diag-empresa-input"
+                    type="text"
+                    required
+                    value={empresaInput}
+                    onChange={(e) => setEmpresaInput(e.target.value)}
+                    placeholder="Ex: Autoescola Exemplo"
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-200 outline-none"
+                  />
+                </div>
+
+                {/* Segmento */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Segmento da Empresa</label>
+                  <input
+                    id="diag-segmento-input"
+                    type="text"
+                    required
+                    value={segmentoInput}
+                    onChange={(e) => setSegmentoInput(e.target.value)}
+                    placeholder="Ex: Educação para formação de condutores"
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-200 outline-none"
+                  />
+                </div>
+
+                {/* Mercado */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Mercado / Tipo de Atuação</label>
+                  <select
+                    id="diag-mercado-select"
+                    value={mercadoInput}
+                    onChange={(e) => setMercadoInput(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-200 outline-none"
+                  >
+                    <option value="Serviços locais">Serviços locais</option>
+                    <option value="Nacional ou Online">Nacional ou Online</option>
+                    <option value="E-commerce">E-commerce</option>
+                    <option value="Infoprodutos / Educação">Infoprodutos / Educação</option>
+                    <option value="B2B / Corporativo">B2B / Corporativo</option>
+                  </select>
+                </div>
+
+                {/* Cidade e UF */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Cidade</label>
+                    <input
+                      id="diag-cidade-input"
+                      type="text"
+                      required
+                      value={cidadeInput}
+                      onChange={(e) => setCidadeInput(e.target.value)}
+                      placeholder="Ex: Angra dos Reis"
+                      className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-200 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">UF</label>
+                    <input
+                      id="diag-uf-input"
+                      type="text"
+                      required
+                      maxLength={2}
+                      value={ufInput}
+                      onChange={(e) => setUfInput(e.target.value.toUpperCase())}
+                      placeholder="Ex: RJ"
+                      className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-200 text-center uppercase outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Público Predominante */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Público Predominante</label>
+                  <input
+                    id="diag-publico-input"
+                    type="text"
+                    required
+                    value={publicoInput}
+                    onChange={(e) => setPublicoInput(e.target.value)}
+                    placeholder="Ex: 18 a 35 anos"
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-200 outline-none"
+                  />
+                </div>
+
+                {/* Principal Objetivo */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Principal Objetivo</label>
+                  <input
+                    id="diag-objetivo-input"
+                    type="text"
+                    required
+                    value={objetivoInput}
+                    onChange={(e) => setObjetivoInput(e.target.value)}
+                    placeholder="Ex: Aumentar matrículas"
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-200 outline-none"
+                  />
+                </div>
+
+                {/* Maior Gargalo */}
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Maior Gargalo Atual</label>
+                  <textarea
+                    id="diag-gargalo-textarea"
+                    required
+                    rows={2}
+                    value={gargaloInput}
+                    onChange={(e) => setGargaloInput(e.target.value)}
+                    placeholder="Ex: Baixa geração de leads pelo Instagram e poucas avaliações no Google."
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-200 outline-none resize-none"
+                  />
+                </div>
+
+                {/* Maturidade Digital (Slider) */}
+                <div className="space-y-2 p-3 bg-slate-950 rounded-xl border border-slate-850">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="font-bold text-slate-400 uppercase tracking-wider">Maturidade Digital</span>
+                    <span className="text-indigo-400 font-extrabold">{matDigital}/10</span>
+                  </div>
+                  <input
+                    id="diag-maturidade-range"
+                    type="range"
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={matDigital}
+                    onChange={(e) => setMatDigital(Number(e.target.value))}
+                    className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  />
+                  <div className="flex justify-between text-[9px] text-slate-500 font-semibold">
+                    <span>Iniciante</span>
+                    <span>Avançado</span>
+                  </div>
+                </div>
+
+                {/* Organização Comercial (Slider) */}
+                <div className="space-y-2 p-3 bg-slate-950 rounded-xl border border-slate-850">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="font-bold text-slate-400 uppercase tracking-wider">Organização Comercial</span>
+                    <span className="text-indigo-400 font-extrabold">{orgComercial}/10</span>
+                  </div>
+                  <input
+                    id="diag-comercial-range"
+                    type="range"
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={orgComercial}
+                    onChange={(e) => setOrgComercial(Number(e.target.value))}
+                    className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  />
+                  <div className="flex justify-between text-[9px] text-slate-500 font-semibold">
+                    <span>Sem processos</span>
+                    <span>Total estruturado</span>
+                  </div>
+                </div>
+
+                {/* Prioridade Estratégica */}
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Prioridade Estratégica Principal</label>
+                  <select
+                    id="diag-prioridade-select"
+                    value={prioridadeInput}
+                    onChange={(e) => setPrioridadeInput(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-xs text-slate-200 outline-none"
+                  >
+                    <option value="Marketing e Conversão">Marketing e Conversão (Atração e Vendas)</option>
+                    <option value="Eficiência e Processos">Eficiência e Processos (Operações Internas)</option>
+                    <option value="Gestão Financeira e Caixa">Gestão Financeira e Caixa (Finanças)</option>
+                    <option value="Retenção e Recompra">Retenção e Recompra (Fidelização e Indicação)</option>
+                  </select>
+                </div>
+
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 justify-end pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  id="btn-cancel-initial-diag"
+                  onClick={() => setShowInitialDiagModal(false)}
+                  className="px-4 py-2.5 bg-slate-950 hover:bg-slate-850 text-slate-400 hover:text-slate-300 rounded-xl text-xs font-bold transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  id="btn-submit-initial-diag"
+                  disabled={savingDiag}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-extrabold transition-all shadow-md shadow-indigo-600/15 flex items-center gap-2"
+                >
+                  <span>{savingDiag ? "Gerando..." : "Gerar Resumo Executivo"}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

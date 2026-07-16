@@ -160,7 +160,7 @@ export const AdminPanel: React.FC = () => {
   const handleRemoveEmail = async (docId: string, email: string) => {
     const isOwnerEmail = email.toLowerCase() === "enilsonlobo32@gmail.com";
     if (isOwnerEmail) {
-      setError("O e-mail do proprietário Enilson Lobo não pode ter seu acesso revogado!");
+      setError("O e-mail do proprietário administrador principal não pode ter seu acesso revogado!");
       setTimeout(() => setError(null), 5000);
       return;
     }
@@ -357,59 +357,61 @@ export const AdminPanel: React.FC = () => {
           {/* List of currently whitelisted emails - 7 cols */}
           <div className="lg:col-span-7 space-y-4">
             <div className="bg-slate-900/40 border border-slate-900 p-5 rounded-2xl flex flex-col h-full min-h-[240px]">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">E-mails com Acesso Liberado ({whitelist.length})</h4>
-                <span className="text-[10px] text-slate-500 font-bold">Total na nuvem</span>
-              </div>
-              <hr className="border-slate-900 mb-4" />
+              {(() => {
+                const visibleWhitelist = whitelist.filter(
+                  (item) => !item.email || item.email.toLowerCase() !== "enilsonlobo32@gmail.com"
+                );
+                return (
+                  <>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xs font-extrabold text-white uppercase tracking-wider">E-mails com Acesso Liberado ({visibleWhitelist.length})</h4>
+                      <span className="text-[10px] text-slate-500 font-bold">Total na nuvem</span>
+                    </div>
+                    <hr className="border-slate-900 mb-4" />
 
-              {loading ? (
-                <div className="flex-1 flex flex-col justify-center items-center gap-2 text-slate-500 py-8">
-                  <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-                  <span className="text-xs font-medium">Sincronizando acessos...</span>
-                </div>
-              ) : whitelist.length === 0 ? (
-                <div className="flex-1 flex flex-col justify-center items-center text-center text-slate-500 py-8">
-                  <Mail className="w-8 h-8 text-slate-700 mb-2" />
-                  <p className="text-xs font-medium">Nenhum e-mail liberado ainda.</p>
-                  <p className="text-[10px] text-slate-600 mt-1">Todos os cadastros estão abertos se o filtro estiver desativado.</p>
-                </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto max-h-[220px] pr-1 space-y-2 custom-scrollbar">
-                  {whitelist.map((item) => {
-                    const isOwner = item.email && item.email.toLowerCase() === "enilsonlobo32@gmail.com";
-                    return (
-                      <div 
-                        key={item.id} 
-                        className="flex items-center justify-between p-3 bg-slate-950 border border-slate-900/80 rounded-xl hover:border-slate-800 transition-colors"
-                      >
-                        <div className="space-y-0.5">
-                          <span className="text-xs font-bold text-slate-200 block truncate max-w-[200px] sm:max-w-[320px]">{item.email}</span>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                            <span className="font-semibold text-slate-400">{item.name}</span>
-                            <span>•</span>
-                            <span>Liberado em {item.createdAt || "Original"}</span>
-                          </div>
-                        </div>
-
-                        {!isOwner ? (
-                          <button
-                            id={`btn-remove-whitelist-${item.id}`}
-                            onClick={() => handleRemoveEmail(item.id, item.email)}
-                            disabled={actionLoading}
-                            className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                            title="Revogar Acesso"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        ) : (
-                          <span className="text-[9px] bg-indigo-500/15 text-indigo-400 font-extrabold uppercase px-2 py-0.5 rounded">Proprietário</span>
-                        )}
+                    {loading ? (
+                      <div className="flex-1 flex flex-col justify-center items-center gap-2 text-slate-500 py-8">
+                        <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
+                        <span className="text-xs font-medium">Sincronizando acessos...</span>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    ) : visibleWhitelist.length === 0 ? (
+                      <div className="flex-1 flex flex-col justify-center items-center text-center text-slate-500 py-8">
+                        <Mail className="w-8 h-8 text-slate-700 mb-2" />
+                        <p className="text-xs font-medium">Nenhum e-mail liberado ainda.</p>
+                        <p className="text-[10px] text-slate-600 mt-1">Todos os cadastros estão abertos se o filtro estiver desativado.</p>
+                      </div>
+                    ) : (
+                      <div className="flex-1 overflow-y-auto max-h-[220px] pr-1 space-y-2 custom-scrollbar">
+                        {visibleWhitelist.map((item) => (
+                          <div 
+                            key={item.id} 
+                            className="flex items-center justify-between p-3 bg-slate-950 border border-slate-900/80 rounded-xl hover:border-slate-800 transition-colors"
+                          >
+                            <div className="space-y-0.5">
+                              <span className="text-xs font-bold text-slate-200 block truncate max-w-[200px] sm:max-w-[320px]">{item.email}</span>
+                              <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                <span className="font-semibold text-slate-400">{item.name}</span>
+                                <span>•</span>
+                                <span>Liberado em {item.createdAt || "Original"}</span>
+                              </div>
+                            </div>
+
+                            <button
+                              id={`btn-remove-whitelist-${item.id}`}
+                              onClick={() => handleRemoveEmail(item.id, item.email)}
+                              disabled={actionLoading}
+                              className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                              title="Revogar Acesso"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
 
