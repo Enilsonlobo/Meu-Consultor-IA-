@@ -5,6 +5,7 @@
 
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
@@ -738,6 +739,130 @@ app.use(express.json());
       res.status(500).json({ error: error.message || "Erro ao gerar postagem de luxo." });
     }
   });
+
+  // --- START CENTRALIZED SIMULATED DATABASE SYNC ENDPOINTS ---
+  const DB_FILE = path.join(process.cwd(), "simulated_db.json");
+
+  interface SimulatedDb {
+    users: any[];
+    chats: any[];
+    diagnostics: any[];
+    competition: any[];
+    whitelist: any[];
+    settings: any[];
+    instagram_audits: any[];
+  }
+
+  let simulatedData: SimulatedDb = {
+    users: [],
+    chats: [],
+    diagnostics: [],
+    competition: [],
+    whitelist: [
+      { id: "wl-1", email: "mestre@consultoria.com.br", name: "Meu Consultor IA (Dono)" },
+      { id: "wl-2", email: "admin@consultoria.com.br", name: "Administrador Geral" },
+      { id: "wl-3", email: "empresa@consultoria.com.br", name: "Usuário de Demonstração" }
+    ],
+    settings: [
+      { id: "whitelist_enabled", key: "whitelist_enabled", value: true, name: "Exigir Liberação de E-mail" }
+    ],
+    instagram_audits: []
+  };
+
+  // Load existing simulated db from disk on startup
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const fileContent = fs.readFileSync(DB_FILE, "utf-8");
+      simulatedData = { ...simulatedData, ...JSON.parse(fileContent) };
+      console.log("[Meu Consultor IA®] Loaded central simulated db successfully from disk.");
+    } else {
+      fs.writeFileSync(DB_FILE, JSON.stringify(simulatedData, null, 2), "utf-8");
+    }
+  } catch (e) {
+    console.warn("Failed to load/initialize simulated_db.json:", e);
+  }
+
+  function saveSimulatedDb() {
+    try {
+      fs.writeFileSync(DB_FILE, JSON.stringify(simulatedData, null, 2), "utf-8");
+    } catch (e) {
+      console.warn("Failed to save simulated_db.json to disk:", e);
+    }
+  }
+
+  // API - Get all docs for a collection
+  app.get("/api/simdb/get", (req, res) => {
+    const { collectionName } = req.query;
+    const col = collectionName as keyof SimulatedDb;
+    if (simulatedData[col]) {
+      res.json(simulatedData[col]);
+    } else {
+      res.json([]);
+    }
+  });
+
+  // API - Add a new doc to a collection
+  app.post("/api/simdb/add", (req, res) => {
+    const { collectionName, doc } = req.body;
+    const col = collectionName as keyof SimulatedDb;
+    if (simulatedData[col]) {
+      const newDoc = { id: doc.id || "doc-" + Math.random().toString(36).substring(7), ...doc };
+      simulatedData[col].push(newDoc);
+      saveSimulatedDb();
+      res.json(newDoc);
+    } else {
+      res.status(400).json({ error: "Coleção inválida ou inexistente." });
+    }
+  });
+
+  // API - Update a doc in a collection
+  app.post("/api/simdb/update", (req, res) => {
+    const { collectionName, docId, data } = req.body;
+    const col = collectionName as keyof SimulatedDb;
+    if (simulatedData[col]) {
+      simulatedData[col] = simulatedData[col].map((item: any) => {
+        if (item.id === docId) {
+          return { ...item, ...data };
+        }
+        return item;
+      });
+      saveSimulatedDb();
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ error: "Coleção inválida ou inexistente." });
+    }
+  });
+
+  // API - Delete a doc from a collection
+  app.post("/api/simdb/delete", (req, res) => {
+    const { collectionName, docId } = req.body;
+    const col = collectionName as keyof SimulatedDb;
+    if (simulatedData[col]) {
+      simulatedData[col] = simulatedData[col].filter((item: any) => item.id !== docId);
+      saveSimulatedDb();
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ error: "Coleção inválida ou inexistente." });
+    }
+  });
+
+  // API - Get simulated users
+  app.get("/api/simdb/users/get", (req, res) => {
+    res.json(simulatedData.users);
+  });
+
+  // API - Set/Sync simulated users
+  app.post("/api/simdb/users/set", (req, res) => {
+    const { users } = req.body;
+    if (Array.isArray(users)) {
+      simulatedData.users = users;
+      saveSimulatedDb();
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ error: "O parâmetro 'users' deve ser uma lista válida." });
+    }
+  });
+  // --- END CENTRALIZED SIMULATED DATABASE SYNC ENDPOINTS ---
 
   // Vite & Server Listen Integration
   if (process.env.VERCEL !== "1") {

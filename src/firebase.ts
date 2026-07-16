@@ -113,6 +113,89 @@ seedDefaultDbSettings();
 const getLocalUsers = () => JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || "[]");
 const setLocalUsers = (users: any[]) => localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
 
+// Central Server Sync Helpers for Simulated Mock Mode
+async function fetchServerDocs(collectionName: string): Promise<any[]> {
+  try {
+    const res = await fetch(`/api/simdb/get?collectionName=${collectionName}`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn(`[Sync] Failed to fetch docs for ${collectionName} from server:`, e);
+  }
+  return [];
+}
+
+async function addServerDoc(collectionName: string, doc: any): Promise<any> {
+  try {
+    const res = await fetch("/api/simdb/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ collectionName, doc })
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn(`[Sync] Failed to add doc in ${collectionName} to server:`, e);
+  }
+  return null;
+}
+
+async function updateServerDoc(collectionName: string, docId: string, data: any): Promise<boolean> {
+  try {
+    const res = await fetch("/api/simdb/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ collectionName, docId, data })
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn(`[Sync] Failed to update doc in ${collectionName} on server:`, e);
+    return false;
+  }
+}
+
+async function deleteServerDoc(collectionName: string, docId: string): Promise<boolean> {
+  try {
+    const res = await fetch("/api/simdb/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ collectionName, docId })
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn(`[Sync] Failed to delete doc in ${collectionName} from server:`, e);
+    return false;
+  }
+}
+
+async function fetchServerUsers(): Promise<any[]> {
+  try {
+    const res = await fetch("/api/simdb/users/get");
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn("[Sync] Failed to fetch users from server:", e);
+  }
+  return [];
+}
+
+async function saveServerUsers(users: any[]): Promise<boolean> {
+  try {
+    const res = await fetch("/api/simdb/users/set", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ users })
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn("[Sync] Failed to save users to server:", e);
+    return false;
+  }
+}
+
 // Seed default profile for trial
 const defaultTrialUser = {
   uid: "trial-owner-123",
@@ -232,7 +315,13 @@ class MockAuth {
   }
 
   async signInWithEmailAndPassword(email: string, pass: string) {
-    const users = getLocalUsers();
+    let users = await fetchServerUsers();
+    if (!users || users.length === 0) {
+      users = getLocalUsers();
+    } else {
+      setLocalUsers(users);
+    }
+
     let user = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
     
     if (!user) {
@@ -251,7 +340,13 @@ class MockAuth {
   }
 
   async createUserWithEmailAndPassword(email: string, pass: string) {
-    const users = getLocalUsers();
+    let users = await fetchServerUsers();
+    if (!users || users.length === 0) {
+      users = getLocalUsers();
+    } else {
+      setLocalUsers(users);
+    }
+
     if (users.find((u: any) => u.email.toLowerCase() === email.toLowerCase())) {
       throw new Error("E-mail já está em uso por outra conta.");
     }
@@ -336,6 +431,7 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
     };
 
     users.push(newUser);
+    await saveServerUsers(users);
     setLocalUsers(users);
 
     const { password, ...safeUser } = newUser;
@@ -362,13 +458,17 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
     this.currentUser = { ...this.currentUser, ...data };
     sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
 
-    const users = getLocalUsers();
+    let users = await fetchServerUsers();
+    if (!users || users.length === 0) {
+      users = getLocalUsers();
+    }
     const updatedUsers = users.map((u: any) => {
       if (u.uid === this.currentUser.uid) {
         return { ...u, ...data };
       }
       return u;
     });
+    await saveServerUsers(updatedUsers);
     setLocalUsers(updatedUsers);
     this.triggerStateChange();
   }
@@ -392,7 +492,13 @@ class MockDb {
     if (collectionName === "settings") key = DB_SETTINGS_KEY;
     if (collectionName === "instagram_audits") key = DB_INSTAGRAM_AUDITS_KEY;
 
-    let list = this.getTable(key);
+    let list = await fetchServerDocs(collectionName);
+    if (list && list.length > 0) {
+      this.setTable(key, list);
+    } else {
+      list = this.getTable(key);
+    }
+
     // basic filter
     for (const cond of queryConditions) {
       if (cond.field && cond.val !== undefined) {
@@ -410,8 +516,10 @@ class MockDb {
     if (collectionName === "settings") key = DB_SETTINGS_KEY;
     if (collectionName === "instagram_audits") key = DB_INSTAGRAM_AUDITS_KEY;
 
-    const list = this.getTable(key);
     const newDoc = { id: data.id || "doc-" + Math.random().toString(36).substring(7), ...data };
+    await addServerDoc(collectionName, newDoc);
+
+    const list = this.getTable(key);
     list.push(newDoc);
     this.setTable(key, list);
     return newDoc;
@@ -424,6 +532,8 @@ class MockDb {
     if (collectionName === "whitelist") key = DB_WHITELIST_KEY;
     if (collectionName === "settings") key = DB_SETTINGS_KEY;
     if (collectionName === "instagram_audits") key = DB_INSTAGRAM_AUDITS_KEY;
+
+    await updateServerDoc(collectionName, docId, data);
 
     const list = this.getTable(key);
     const updatedList = list.map((item: any) => {
@@ -443,6 +553,8 @@ class MockDb {
     if (collectionName === "whitelist") key = DB_WHITELIST_KEY;
     if (collectionName === "settings") key = DB_SETTINGS_KEY;
     if (collectionName === "instagram_audits") key = DB_INSTAGRAM_AUDITS_KEY;
+
+    await deleteServerDoc(collectionName, docId);
 
     const list = this.getTable(key);
     const filteredList = list.filter((item: any) => item.id !== docId);
