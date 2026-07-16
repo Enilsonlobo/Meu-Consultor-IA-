@@ -71,6 +71,7 @@ const DB_DIAGNOSTICS_KEY = "mci_mock_db_diagnostics";
 const DB_COMPETITION_KEY = "mci_mock_db_competition";
 const DB_WHITELIST_KEY = "mci_mock_db_whitelist";
 const DB_SETTINGS_KEY = "mci_mock_db_settings";
+const DB_INSTAGRAM_AUDITS_KEY = "mci_mock_db_instagram_audits";
 
 export const ALWAYS_ALLOWED_EMAILS = [
   "enilsonlobo32@gmail.com",
@@ -148,13 +149,15 @@ class MockAuth {
 
   constructor() {
     try {
-      const savedUser = localStorage.getItem(CURRENT_USER_KEY);
+      const savedUser = sessionStorage.getItem(CURRENT_USER_KEY) || localStorage.getItem(CURRENT_USER_KEY);
       if (savedUser) {
         this.currentUser = JSON.parse(savedUser);
+        // Migrate to sessionStorage and remove from localStorage to enforce session limits
+        sessionStorage.setItem(CURRENT_USER_KEY, savedUser);
+        localStorage.removeItem(CURRENT_USER_KEY);
       } else {
-        // Set default logged in user for immediate visual experience
-        this.currentUser = defaultTrialUser;
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(defaultTrialUser));
+        // Do not auto-login to force users to use landing & credentials screen
+        this.currentUser = null;
       }
     } catch (e) {
       console.error(e);
@@ -223,7 +226,7 @@ class MockAuth {
 
     const { password, ...safeUser } = user;
     this.currentUser = { ...safeUser, ultimoAcesso: new Date().toLocaleDateString('pt-BR') };
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
     this.triggerStateChange();
     return { user: this.currentUser };
   }
@@ -267,14 +270,15 @@ class MockAuth {
 
     const { password, ...safeUser } = newUser;
     this.currentUser = safeUser;
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
     this.triggerStateChange();
     return { user: this.currentUser };
   }
 
   async signOut() {
     this.currentUser = null;
-    localStorage.removeItem(CURRENT_USER_KEY);
+    sessionStorage.removeItem(CURRENT_USER_KEY);
+    localStorage.removeItem(CURRENT_USER_KEY); // Clean up legacy local state too
     this.triggerStateChange();
   }
 
@@ -286,7 +290,7 @@ class MockAuth {
   async updateProfileData(data: Partial<typeof defaultTrialUser>) {
     if (!this.currentUser) return;
     this.currentUser = { ...this.currentUser, ...data };
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
 
     const users = getLocalUsers();
     const updatedUsers = users.map((u: any) => {
@@ -316,6 +320,7 @@ class MockDb {
     if (collectionName === "competition") key = DB_COMPETITION_KEY;
     if (collectionName === "whitelist") key = DB_WHITELIST_KEY;
     if (collectionName === "settings") key = DB_SETTINGS_KEY;
+    if (collectionName === "instagram_audits") key = DB_INSTAGRAM_AUDITS_KEY;
 
     let list = this.getTable(key);
     // basic filter
@@ -333,6 +338,7 @@ class MockDb {
     if (collectionName === "competition") key = DB_COMPETITION_KEY;
     if (collectionName === "whitelist") key = DB_WHITELIST_KEY;
     if (collectionName === "settings") key = DB_SETTINGS_KEY;
+    if (collectionName === "instagram_audits") key = DB_INSTAGRAM_AUDITS_KEY;
 
     const list = this.getTable(key);
     const newDoc = { id: data.id || "doc-" + Math.random().toString(36).substring(7), ...data };
@@ -347,6 +353,7 @@ class MockDb {
     if (collectionName === "competition") key = DB_COMPETITION_KEY;
     if (collectionName === "whitelist") key = DB_WHITELIST_KEY;
     if (collectionName === "settings") key = DB_SETTINGS_KEY;
+    if (collectionName === "instagram_audits") key = DB_INSTAGRAM_AUDITS_KEY;
 
     const list = this.getTable(key);
     const updatedList = list.map((item: any) => {
@@ -365,6 +372,7 @@ class MockDb {
     if (collectionName === "competition") key = DB_COMPETITION_KEY;
     if (collectionName === "whitelist") key = DB_WHITELIST_KEY;
     if (collectionName === "settings") key = DB_SETTINGS_KEY;
+    if (collectionName === "instagram_audits") key = DB_INSTAGRAM_AUDITS_KEY;
 
     const list = this.getTable(key);
     const filteredList = list.filter((item: any) => item.id !== docId);

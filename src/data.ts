@@ -20,23 +20,23 @@ export const DIAG_QUESTIONS: DiagnosticQuestion[] = [
   {
     id: "q-conhecimento-1",
     pillar: "conhecimento",
-    questionText: "Como você monitora a satisfação, necessidades e reclamações dos seus clientes?",
+    questionText: "1. Monitoramento do Cliente: Como a sua empresa monitora e gerencia ativamente a satisfação, necessidades latentes e reclamações do público-alvo?",
     options: [
-      { label: "Nível Reativo", score: 25, description: "Só sei quando o cliente reclama diretamente ou para de comprar." },
-      { label: "Nível Informal", score: 55, description: "Pergunto de forma verbal no dia a dia, sem documentação oficial." },
-      { label: "Nível Estruturado", score: 85, description: "Utilizo pesquisas de satisfação recorrentes (ex: NPS) de forma periódica." },
-      { label: "Nível Avançado", score: 100, description: "Tenho banco de dados unificado com histórico de hábitos e feedbacks estruturados de cada cliente." }
+      { label: "Nível Reativo / Nulo", score: 25, description: "Inexistência de canais de escuta ativa. Só tomamos conhecimento de falhas ou insatisfação quando há reclamações públicas ou quando o cliente interrompe as compras definitivamente." },
+      { label: "Nível Informal / Verbal", score: 55, description: "Feedback coletado de maneira verbal e esporádica durante o atendimento presencial ou WhatsApp, sem qualquer arquivamento, cruzamento de dados ou padronização de tratamento de insatisfações." },
+      { label: "Nível Estruturado / NPS", score: 85, description: "Pesquisas de satisfação periódicas e estruturadas (ex: Net Promoter Score - NPS) enviadas de forma recorrente e documentada, gerando relatórios de melhoria para os processos internos." },
+      { label: "Nível de Elite / CRM Omnichannel", score: 100, description: "Banco de dados e CRM unificados com registro completo de hábitos de consumo, feedbacks detalhados de cada cliente e inteligência preditiva para identificar e solucionar dores antes de uma reclamação." }
     ]
   },
   {
     id: "q-relacionamento-2",
     pillar: "relacionamento",
-    questionText: "De que forma sua empresa mantém contato pós-venda com clientes via canais digitais?",
+    questionText: "2. Relacionamento & Pós-Venda: De que forma sua empresa cultiva a fidelização, relacionamento e recompra através de canais digitais ativos?",
     options: [
-      { label: "Nulo ou Raro", score: 20, description: "Não fazemos pós-venda. O foco é apenas na próxima atração de clientes." },
-      { label: "Canal Passivo", score: 50, description: "Apenas respondemos dúvidas quando entram em contato pelo WhatsApp." },
-      { label: "Ativo Mensal", score: 80, description: "Enviamos mensagens de novidades, cupons de aniversário e ofertas direcionadas." },
-      { label: "Relacionamento VIP", score: 100, description: "Funil personalizado pós-venda automatizado no CRM com réguas de nutrição e suporte ativo." }
+      { label: "Nulo ou Inexistente", score: 20, description: "Não realizamos pós-venda estratégico. Todo o foco operacional, de tempo e de orçamento está voltado exclusivamente para atrair o próximo cliente de primeira compra." },
+      { label: "Suporte Reativo", score: 50, description: "Mantemos contato passivo; apenas respondemos a dúvidas ou solicitações se o próprio cliente entrar em contato de forma espontânea pelo WhatsApp ou Redes Sociais." },
+      { label: "Relacionamento Ativo Planejado", score: 80, description: "Iniciativa ativa periódica de contato por meio de listas de transmissão organizadas, enviando cupons de aniversário personalizados, ofertas específicas de recompra e novidades mensais." },
+      { label: "Fidelidade VIP Multicanal", score: 100, description: "Régua automatizada de pós-venda integrada no CRM com acompanhamento pós-entrega, pesquisas de satisfação individuais, clube de benefícios VIP exclusivo e programa de indicação ativo e bonificado." }
     ]
   },
   {

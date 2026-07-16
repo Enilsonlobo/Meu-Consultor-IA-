@@ -50,26 +50,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin }) =>
       </header>
 
       {/* Hero section */}
-      <section className="relative z-10 py-16 md:py-28 px-6">
-        <div className="max-w-5xl mx-auto text-center space-y-8">
+      <section className="relative z-10 py-20 md:py-32 px-6">
+        <div className="max-w-5xl mx-auto text-center space-y-10">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold border border-indigo-500/20"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/5 text-indigo-400 text-xs font-semibold border border-indigo-500/10 tracking-wide"
           >
-            <Award className="w-3.5 h-3.5 text-amber-400" />
-            <span>EXCLUSIVO PARA MICRO E PEQUENAS EMPRESAS</span>
+            <Award className="w-3.5 h-3.5 text-indigo-400" />
+            <span>SISTEMA EXCLUSIVO PARA MICRO E PEQUENAS EMPRESAS</span>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.1] text-white"
+            className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.05] text-white"
           >
-            Empresas não crescem por acaso.<br />
-            <span className="text-2xl sm:text-3xl md:text-4xl font-bold block text-indigo-400 mt-2">
+            Empresas não crescem <span className="font-serif italic font-normal text-slate-400 block sm:inline">por acaso.</span><br />
+            <span className="text-xl sm:text-2xl md:text-3xl font-semibold block text-indigo-400 mt-4 max-w-3xl mx-auto leading-relaxed">
               Crescem quando tomam decisões melhores.
             </span>
           </motion.h1>
@@ -78,9 +78,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin }) =>
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-slate-400 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed font-medium"
+            className="text-slate-400 max-w-xl mx-auto text-xs sm:text-sm leading-relaxed font-semibold tracking-wide"
           >
-            O Meu Consultor IA® analisa sua empresa, identifica oportunidades e cria planos de ação estratégicos para acelerar seu crescimento.
+            O <strong>Meu Consultor IA®</strong> é um ecossistema inteligente de alta performance. Analise gargalos operacionais no método CRESCER™, automatize o padrão de atendimento do seu WhatsApp e domine o Google Meu Negócio de forma prática e descomplicada.
           </motion.p>
 
           <motion.div
@@ -92,7 +92,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin }) =>
             <button
               id="btn-hero-cta"
               onClick={onStart}
-              className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 group transition-all"
+              className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl shadow-lg shadow-indigo-600/15 flex items-center justify-center gap-2.5 group transition-all cursor-pointer text-xs uppercase tracking-wider"
             >
               <span>Começar Minha Consultoria</span>
               <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
@@ -100,7 +100,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin }) =>
             <button
               id="btn-hero-login"
               onClick={onLogin}
-              className="w-full sm:w-auto px-8 py-4 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-2xl border border-slate-700/80 transition-all text-center"
+              className="w-full sm:w-auto px-8 py-4 bg-slate-950 hover:bg-slate-900 text-slate-300 font-extrabold rounded-2xl border border-slate-900 transition-all text-center cursor-pointer text-xs uppercase tracking-wider"
             >
               Acessar Painel
             </button>

@@ -343,15 +343,47 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
               <h3 className="text-base font-extrabold text-white border-l-4 border-indigo-500 pl-3 print:text-slate-950 print:border-slate-800 uppercase tracking-wider">
                 1. Resumo Executivo
               </h3>
-              <p className="text-sm text-slate-300 leading-relaxed font-medium print:text-slate-800">
-                A empresa <strong>{empresa}</strong> passou pela auditoria empresarial baseada no Método CRESCER™, pontuando <strong>{score}%</strong> no índice geral de maturidade. 
-                {score >= 80 
-                  ? " O negócio demonstra uma infraestrutura operacional e estratégica sólida, com processos bem delimitados. Os próximos passos residem na automação avançada de processos e estratégias inovadoras de canais digitais de tração."
-                  : score >= 50 
-                  ? " A organização se encontra em um patamar intermediário de estruturação empresarial. Embora possua canais comerciais funcionais, há gargalos latentes de processos em marketing digital ativo e reconciliação financeira sistêmica."
-                  : " O resultado acende um sinal de alerta operacional crítico. A empresa opera sob forte dependência de intuição operacional, carecendo de playbooks básicos de equipe, controle sistêmico de fluxo de caixa e automação pós-venda ativa."
-                }
-              </p>
+              <div className="p-5 bg-slate-900/40 border border-slate-900 rounded-2xl space-y-4 print:bg-slate-50 print:border-slate-200">
+                <p className="text-xs md:text-sm text-slate-300 leading-relaxed font-semibold print:text-slate-800">
+                  A empresa <strong className="text-white print:text-slate-950">{empresa}</strong> foi submetida a uma auditoria estratégica aprofundada baseada no <strong className="text-indigo-400 print:text-indigo-900">Método CRESCER™</strong>, obtendo um Índice Geral de Maturidade Operacional e de Gestão de <strong className="text-indigo-400 print:text-indigo-900">{score}%</strong>.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                  <div className="p-3.5 bg-slate-950/80 border border-slate-900 rounded-xl space-y-1.5 print:bg-white print:border-slate-300">
+                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider block">Diagnóstico de Gestão</span>
+                    <p className="text-[11px] text-slate-400 font-semibold leading-relaxed print:text-slate-700">
+                      {score >= 80 
+                        ? "Infraestrutura operacional altamente consolidada. O negócio possui ótima maturidade e excelente estruturação de canais."
+                        : score >= 50 
+                        ? "Patamar intermediário de estruturação empresarial. Possui canais funcionais, mas carrega gargalos de controle e automação."
+                        : "Sinal de alerta operacional crítico. Forte dependência de intuição do gestor, demandando correções estruturais imediatas."
+                      }
+                    </p>
+                  </div>
+                  <div className="p-3.5 bg-slate-950/80 border border-slate-900 rounded-xl space-y-1.5 print:bg-white print:border-slate-300">
+                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider block">Impacto Competitivo</span>
+                    <p className="text-[11px] text-slate-400 font-semibold leading-relaxed print:text-slate-700">
+                      {score >= 80 
+                        ? "Excelente posicionamento regional. Próximo passo é escalar a automação de vendas e o marketing de fidelização ativo."
+                        : score >= 50 
+                        ? "Vulnerabilidade em relação a concorrentes que utilizam canais digitais automatizados e ferramentas modernas de CRM."
+                        : "Vazamento de faturamento latente e risco imediato de perda de clientes devido a processos de pós-venda nulos ou informais."
+                      }
+                    </p>
+                  </div>
+                  <div className="p-3.5 bg-slate-950/80 border border-slate-900 rounded-xl space-y-1.5 print:bg-white print:border-slate-300">
+                    <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider block">Direcionamento Recomendado</span>
+                    <p className="text-[11px] text-slate-400 font-semibold leading-relaxed print:text-slate-700">
+                      {score >= 80 
+                        ? "Consolidar playbooks de luxo, implementar inteligência de dados omnichannel e otimizar margens de lucro dinâmicas."
+                        : score >= 50 
+                        ? "Padronizar o atendimento comercial no WhatsApp, organizar o Google Business e criar um fluxo rígido de caixa."
+                        : "Organizar o perfil comercial no Google Business, implantar pós-venda reativo no WhatsApp e estruturar o caixa de forma urgente."
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Section 2: Core Diagnostic Breakdown */}
@@ -361,17 +393,44 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({
               </h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {Object.entries(pillars).map(([key, value]) => (
-                  <div key={key} className="p-3 bg-slate-900/40 border border-slate-900 rounded-xl flex items-center justify-between text-xs print:bg-slate-50 print:border-slate-200">
-                    <span className="font-bold text-slate-300 capitalize print:text-slate-800">{getPillarLabel(key)}</span>
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden shrink-0 print:bg-slate-200">
-                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${value}%` }} />
+                {Object.entries(pillars).map(([key, value]) => {
+                  const val = value as number;
+                  let statusLabel = "Crítico";
+                  let statusBadgeClass = "text-rose-400 bg-rose-500/10 border-rose-500/20";
+                  if (val >= 80) {
+                    statusLabel = "Excelente";
+                    statusBadgeClass = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
+                  } else if (val >= 50) {
+                    statusLabel = "Em Evolução";
+                    statusBadgeClass = "text-amber-400 bg-amber-500/10 border-amber-500/20";
+                  }
+
+                  return (
+                    <div key={key} className="p-4 bg-slate-900/40 border border-slate-900 rounded-2xl flex flex-col justify-between gap-3 text-xs print:bg-slate-50 print:border-slate-200">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-0.5">
+                          <span className="font-extrabold text-slate-200 capitalize print:text-slate-900">{getPillarLabel(key)}</span>
+                        </div>
+                        <span className={`px-2 py-0.5 border rounded-full text-[9px] font-bold uppercase tracking-wider ${statusBadgeClass}`}>
+                          {statusLabel}
+                        </span>
                       </div>
-                      <span className="font-extrabold text-white print:text-slate-900">{value}%</span>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                          <span>Nível de Maturidade</span>
+                          <span className="text-slate-300 font-extrabold">{val}%</span>
+                        </div>
+                        <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden shrink-0 border border-slate-900 print:bg-slate-200">
+                          <div 
+                            className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full transition-all duration-500" 
+                            style={{ width: `${val}%` }} 
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

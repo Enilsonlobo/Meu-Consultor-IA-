@@ -18,7 +18,8 @@ import {
   LogOut,
   Menu,
   X,
-  Palette
+  Palette,
+  Instagram
 } from "lucide-react";
 
 export type SidebarTab = 
@@ -28,8 +29,9 @@ export type SidebarTab =
   | 'radar' 
   | 'plano' 
   | 'relatorios' 
-  | 'historico' 
   | 'artes'
+  | 'instagram_audits'
+  | 'historico' 
   | 'perfil' 
   | 'configuracoes'
   | 'admin';
@@ -61,6 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'plano', label: 'Plano de Ação', icon: CheckSquare },
     { id: 'relatorios', label: 'Relatórios Executivos', icon: FileText },
     { id: 'artes', label: 'Estúdio de Posts', icon: Palette },
+    { id: 'instagram_audits', label: 'Auditoria Instagram', icon: Instagram },
     { id: 'historico', label: 'Histórico', icon: History },
     { id: 'perfil', label: 'Perfil da Empresa', icon: User },
     ...(isAdmin ? [{ id: 'admin', label: 'Painel Admin', icon: Settings }] : []),
@@ -129,13 +132,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id={`sidebar-item-${item.id}`}
                 key={item.id}
                 onClick={() => handleTabClick(item.id as SidebarTab)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 outline-none ${
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 outline-none border ${
                   isSelected 
-                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10" 
-                    : "hover:bg-slate-900/60 hover:text-white text-slate-400"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/15 border-indigo-500/20" 
+                    : "hover:bg-slate-900/40 hover:text-white text-slate-400 border-transparent"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isSelected ? "text-white" : "text-slate-500 group-hover:text-white"}`} />
+                <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-white" : "text-slate-500 group-hover:text-white"}`} />
                 <span>{item.label}</span>
               </button>
             );

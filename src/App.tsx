@@ -18,6 +18,8 @@ import { ProfileSection } from "./components/ProfileSection";
 import { AdminPanel } from "./components/AdminPanel";
 import { ActionPlanSection } from "./components/ActionPlanSection";
 import { PostDesignStudio } from "./components/PostDesignStudio";
+import { InstagramAudit } from "./components/InstagramAudit";
+import { PublicAuditView } from "./components/PublicAuditView";
 import { DIAG_QUESTIONS } from "./data";
 import { 
   Sparkles, 
@@ -40,6 +42,16 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authScreen, setAuthScreen] = useState<'landing' | 'login'>('landing');
+  const [publicAuditId, setPublicAuditId] = useState<string | null>(null);
+
+  // Parse URL search parameters on load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const auditParam = params.get("audit");
+    if (auditParam) {
+      setPublicAuditId(auditParam);
+    }
+  }, []);
 
   // Sidebar Tab navigation
   const [activeTab, setActiveTab] = useState<SidebarTab>('dashboard');
@@ -339,6 +351,19 @@ Não foi possível estabelecer contato síncrono com a rede neural no momento. N
   // Check if current user is admin
   const isAdmin = currentUser?.email === "admin@consultoria.com.br" || currentUser?.email === "enilsonlobo32@gmail.com";
 
+  if (publicAuditId) {
+    return (
+      <PublicAuditView 
+        auditId={publicAuditId} 
+        onBackToApp={() => {
+          // Clear query params and state
+          window.history.pushState({}, document.title, window.location.pathname);
+          setPublicAuditId(null);
+        }} 
+      />
+    );
+  }
+
   if (isAuthenticating) {
     return (
       <div id="loader-fallback" className="min-h-screen bg-slate-900 flex flex-col justify-center items-center gap-4 text-slate-100 font-sans">
@@ -495,6 +520,10 @@ Não foi possível estabelecer contato síncrono com a rede neural no momento. N
 
         {activeTab === 'artes' && (
           <PostDesignStudio profile={currentUser} />
+        )}
+
+        {activeTab === 'instagram_audits' && (
+          <InstagramAudit profile={currentUser} />
         )}
 
         {activeTab === 'historico' && (

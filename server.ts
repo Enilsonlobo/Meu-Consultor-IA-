@@ -6,7 +6,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -197,11 +197,8 @@ function getGeminiClient() {
   });
 }
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
-
-  app.use(express.json());
+const app = express();
+app.use(express.json());
 
   // API Route: Send message to specific consultant
   app.post("/api/chat", async (req, res) => {
@@ -466,6 +463,209 @@ async function startServer() {
     }
   });
 
+  // Schema for Instagram Audit Report
+  const instagramAuditSchema = {
+    type: Type.OBJECT,
+    properties: {
+      scoreGeral: { type: Type.INTEGER, description: "Score geral do perfil de 0 a 100" },
+      diagnostico: {
+        type: Type.OBJECT,
+        properties: {
+          bio: { type: Type.INTEGER, description: "Nota de 0 a 10 para a Bio" },
+          foto: { type: Type.INTEGER, description: "Nota de 0 a 10 para a Foto do perfil" },
+          nomePerfil: { type: Type.INTEGER, description: "Nota de 0 a 10 para o Nome do perfil" },
+          nomeUsuario: { type: Type.INTEGER, description: "Nota de 0 a 10 para o Nome de usuário" },
+          destaques: { type: Type.INTEGER, description: "Nota de 0 a 10 para os Destaques" },
+          frequencia: { type: Type.INTEGER, description: "Nota de 0 a 10 para a Frequência de postagem" },
+          identidadeVisual: { type: Type.INTEGER, description: "Nota de 0 a 10 para a Identidade visual" },
+          posicionamento: { type: Type.INTEGER, description: "Nota de 0 a 10 para o Posicionamento" },
+          clarezaOferta: { type: Type.INTEGER, description: "Nota de 0 a 10 para a Clareza da oferta" },
+          cta: { type: Type.INTEGER, description: "Nota de 0 a 10 para o Call To Action" },
+          propostaValor: { type: Type.INTEGER, description: "Nota de 0 a 10 para a Proposta de valor" }
+        },
+        required: ["bio", "foto", "nomePerfil", "nomeUsuario", "destaques", "frequencia", "identidadeVisual", "posicionamento", "clarezaOferta", "cta", "propostaValor"]
+      },
+      pontosFortes: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description: "Lista de pontos fortes encontrados no perfil"
+      },
+      pontosAtencao: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description: "Lista de pontos de atenção ou melhorias críticas"
+      },
+      gargalos: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            titulo: { type: Type.STRING, description: "Título do gargalo (ex: Gancho fraco, CTA inexistente)" },
+            impacto: { type: Type.STRING, description: "Descrição do impacto desse problema no crescimento" }
+          },
+          required: ["titulo", "impacto"]
+        }
+      },
+      oportunidades: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description: "Formatos e ações de maior potencial no Instagram para o segmento analisado"
+      },
+      estrategiaRecomendada: {
+        type: Type.STRING,
+        description: "Texto ou Markdown curto com a recomendação estratégica geral de funil orgânico"
+      },
+      conteudosPerformance: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            tema: { type: Type.STRING },
+            formato: { type: Type.STRING },
+            objetivo: { type: Type.STRING },
+            motivo: { type: Type.STRING, description: "Motivo da excelente performance potencial" },
+            emocao: { type: Type.STRING, description: "Emoção predominante gerada no público" },
+            gatilho: { type: Type.STRING, description: "Gatilho mental principal utilizado" },
+            replicacao: { type: Type.STRING, description: "Oportunidade e como replicar esse formato" }
+          },
+          required: ["tema", "formato", "objetivo", "motivo", "emocao", "gatilho", "replicacao"]
+        },
+        description: "5 conteúdos com maior potencial de performance para o nicho"
+      },
+      hooks: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description: "Exatamente 20 hooks altamente persuasivos. Cada hook deve ter exatamente 10 palavras!"
+      },
+      ideiasConteudo: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            titulo: { type: Type.STRING, description: "Título do post/vídeo" },
+            formato: { type: Type.STRING, description: "Formato (ex: Reels, Carrossel, Stories)" },
+            objetivo: { type: Type.STRING, description: "Objetivo estratégico (ex: Conexão, Venda)" },
+            gancho: { type: Type.STRING, description: "Gancho inicial de retenção" },
+            cta: { type: Type.STRING, description: "Chamada para ação sugerida" }
+          },
+          required: ["titulo", "formato", "objetivo", "gancho", "cta"]
+        },
+        description: "Lista de exatamente 20 ideias de conteúdos com alto potencial"
+      },
+      tendencias: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            titulo: { type: Type.STRING },
+            porQueFunciona: { type: Type.STRING },
+            comoAdaptar: { type: Type.STRING },
+            formato: { type: Type.STRING },
+            comoAumentarRetencao: { type: Type.STRING },
+            comoConverter: { type: Type.STRING, description: "Como transformar visualizações em clientes pagantes" }
+          },
+          required: ["titulo", "porQueFunciona", "comoAdaptar", "formato", "comoAumentarRetencao", "comoConverter"]
+        },
+        description: "5 tendências virais adaptadas para o nicho da empresa"
+      },
+      plano30Dias: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            dia: { type: Type.INTEGER, description: "Dia do plano (1 a 30)" },
+            tarefa: { type: Type.STRING, description: "Descrição da tarefa prática de conteúdo do dia" },
+            tipo: { type: Type.STRING, description: "Tipo de conteúdo: descoberta, consideracao, autoridade, relacionamento, prova_social, conversao" }
+          },
+          required: ["dia", "tarefa", "tipo"]
+        },
+        description: "Calendário de postagens e ações para os próximos 30 dias"
+      },
+      rawReportMarkdown: {
+        type: Type.STRING,
+        description: "A versão textual completa do relatório estruturada em Markdown de alto luxo empresarial"
+      }
+    },
+    required: [
+      "scoreGeral",
+      "diagnostico",
+      "pontosFortes",
+      "pontosAtencao",
+      "gargalos",
+      "oportunidades",
+      "estrategiaRecomendada",
+      "conteudosPerformance",
+      "hooks",
+      "ideiasConteudo",
+      "tendencias",
+      "plano30Dias",
+      "rawReportMarkdown"
+    ]
+  };
+
+  // API Route: Generate Instagram Audit Report using specialist auditor persona
+  app.post("/api/instagram-audit", async (req, res) => {
+    try {
+      const { username, empresa, segmento, publicoAlvo, desafio } = req.body;
+
+      if (!username || !empresa || !segmento) {
+        return res.status(400).json({ error: "Username, empresa e segmento são obrigatórios." });
+      }
+
+      // Conexão simulada do Instagram baseada em dados públicos e melhores práticas do setor.
+
+      const prompt = `Você é um Consultor Sênior em Marketing Digital, SEO para Redes Sociais, Growth Marketing e Estratégia de Conteúdo da plataforma "Meu Consultor IA®". Sua missão é realizar um diagnóstico ultra-detalhado, profissional e estratégico do perfil do Instagram "${username}" para a empresa "${empresa}" no segmento de "${segmento}" (Público-alvo: "${publicoAlvo || "Não informado"}", Principal Desafio e Estágio de Maturidade: "${desafio || "Não informado"}").
+
+      DIRETRIZES CRÍTICAS DE PERSONALIZAÇÃO E TRANSPARÊNCIA:
+      1. ADAPTAÇÃO TOTAL AO SEGMENTO E PÚBLICO: Adapte rigorosamente todas as recomendações, ideias, ganchos e tendências ao segmento de atuação da empresa ("${segmento}"), ao perfil específico do público-alvo ("${publicoAlvo || "Não informado"}") e ao desafio/estágio de maturidade atual. NUNCA utilize conselhos genéricos, vazios ou clichês de marketing digital aplicáveis a qualquer negócio.
+      2. DECLARAÇÃO DE AUSÊNCIA DE MÉTRICAS PRIVADAS (DISCLAIMER): Como não possuímos acesso direto a métricas internas privadas da API do Instagram (tais como alcance exato, impressões, cliques privados, visualizações reais de stories ou dados analíticos de retenção de vídeo), você deve deixar isso explicitamente claro no início do relatório executivo ("rawReportMarkdown") de forma elegante. Informe que a análise é baseada unicamente nas informações públicas disponíveis no perfil (bio, estética, destaques, posts públicos), nas respostas fornecidas pelo usuário e nas melhores práticas globais de marketing digital e SEO para redes sociais. Evite afirmar desempenhos de alcance específicos ou estatísticas numéricas privadas sem evidências diretas.
+
+      Realize a auditoria em exatamente 8 ETAPAS, conforme as diretrizes do manual:
+      
+      ETAPA 1 — DIAGNÓSTICO DO PERFIL: Classifique de 0 a 10 os itens: Bio, Foto do perfil, Nome do perfil, Nome de usuário, Destaques, Frequência de postagem, Identidade visual, Posicionamento, Clareza da oferta, CTA, Proposta de valor.
+      ETAPA 2 — AUDITORIA DE CONTEÚDO: Mapeie 5 conteúdos com altíssimo potencial de performance para o nicho (Tema, Formato, Objetivo, Motivo da boa performance, Emoção predominante, Gatilho utilizado, Oportunidade de replicação).
+      ETAPA 3 — GARGALOS: Identifique os principais gargalos limitantes do crescimento (ex: conteúdo pouco compartilhável, gancho fraco, baixa retenção, CTA inexistente, etc.) e o impacto de cada um.
+      ETAPA 4 — OPORTUNIDADES: Indique quais formatos devem ser intensificados (Reels, Carrossel, Stories, etc.) com justificativas claras.
+      ETAPA 5 — ESTRATÉGIA DE CONTEÚDO: Elabore uma estratégia para atrair clientes organicamente abrangendo os tipos de conteúdo: Descoberta, Consideração, Autoridade, Relacionamento, Prova social e Conversão.
+      ETAPA 6 — HOOKS PERSUASIVOS: Crie exatamente 20 hooks altamente persuasivos. Regras críticas para cada hook: deve conter EXATAMENTE 10 palavras, parar o scroll imediatamente, abrir um loop mental, despertar curiosidade, usar contraste/surpresa/leve polêmica e ser compatível com o nicho.
+      ETAPA 7 — IDEIAS DE CONTEÚDO: Liste exatamente 20 ideias de conteúdo práticos. Para cada ideia informe: Título, Formato, Objetivo, Gancho inicial e CTA sugerido.
+      ETAPA 8 — TENDÊNCIAS: Apresente 5 conteúdos com alto potencial de viralização adaptados à empresa, explicando por que funciona, como adaptar, formato, como aumentar retenção e como converter visualizações em clientes.
+
+      Você deve retornar um objeto JSON estruturado contendo todas as chaves exigidas no schema.
+      Além do formato estruturado JSON, escreva na chave "rawReportMarkdown" uma versão textual completa, rica e sofisticada em Markdown para o relatório executivo oficial. Comece este relatório com o disclaimer sobre a ausência de acesso às métricas privadas e de que a auditoria foca na otimização com base em melhores práticas e no perfil público.
+      Estruture o relatório sob as seguintes seções de apresentação:
+      📋 Nota de Transparência & Limitações da Auditoria (Disclaimer de métricas privadas)
+      📊 Score Geral
+      ✅ Pontos Fortes
+      ⚠️ Pontos de Atenção
+      🚀 Oportunidades
+      📈 Estratégia Recomendada
+      💡 Ideias de Conteúdo
+      🎯 Hooks
+      🔥 Tendências
+      📅 Plano de Conteúdo para os próximos 30 dias (30 itens, sendo um para cada dia, intercalando descoberta, consideração, relacionamento, etc.)
+
+      Seja extremamente pragmático, evite clichês de marketing amador, adote o tom de uma consultoria premium de boutique e garanta que todas as tarefas sejam imediatamente aplicáveis.`;
+
+      const ai = getGeminiClient();
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          temperature: 0.5,
+          responseMimeType: "application/json",
+          responseSchema: instagramAuditSchema
+        }
+      });
+
+      const parsed = JSON.parse(response.text || "{}");
+      res.json(parsed);
+    } catch (error: any) {
+      console.error("Erro na rota /api/instagram-audit:", error);
+      res.status(500).json({ error: error.message || "Erro ao gerar auditoria do Instagram." });
+    }
+  });
+
   // API Route: Generate Post copies and graphic headlines using high-end copywriter persona
   app.post("/api/post-generator", async (req, res) => {
     try {
@@ -539,24 +739,29 @@ async function startServer() {
     }
   });
 
-  // Vite Integration
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+  // Vite & Server Listen Integration
+  if (process.env.VERCEL !== "1") {
+    const PORT = 3000;
+    if (process.env.NODE_ENV !== "production") {
+      createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      }).then((vite) => {
+        app.use(vite.middlewares);
+        app.listen(PORT, "0.0.0.0", () => {
+          console.log(`[Meu Consultor IA®] Servidor dev rodando na porta ${PORT}`);
+        });
+      });
+    } else {
+      const distPath = path.join(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`[Meu Consultor IA®] Servidor prod rodando na porta ${PORT}`);
+      });
+    }
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Meu Consultor IA®] Servidor rodando na porta ${PORT}`);
-  });
-}
-
-startServer();
+export default app;

@@ -85,6 +85,71 @@ export interface CompetitionAnalysis {
   createdAt: string;
 }
 
+export interface InstagramAuditSession {
+  id: string;
+  userId: string;
+  username: string;
+  empresa: string;
+  segmento: string;
+  publicoAlvo: string;
+  desafio: string;
+  scoreGeral: number;
+  diagnostico: {
+    bio: number;
+    foto: number;
+    nomePerfil: number;
+    nomeUsuario: number;
+    destaques: number;
+    frequencia: number;
+    identidadeVisual: number;
+    posicionamento: number;
+    clarezaOferta: number;
+    cta: number;
+    propostaValor: number;
+  };
+  pontosFortes: string[];
+  pontosAtencao: string[];
+  oportunidades: string[];
+  estrategiaRecomendada: string;
+  conteudosPerformance: Array<{
+    tema: string;
+    formato: string;
+    objetivo: string;
+    motivo: string;
+    emocao: string;
+    gatilho: string;
+    replicacao: string;
+  }>;
+  hooks: string[]; // exactly 20 hooks of 10 words
+  ideiasConteudo: Array<{
+    titulo: string;
+    formato: string;
+    objetivo: string;
+    gancho: string;
+    cta: string;
+  }>;
+  tendencias: Array<{
+    titulo: string;
+    porQueFunciona: string;
+    comoAdaptar: string;
+    formato: string;
+    comoAumentarRetencao: string;
+    comoConverter: string;
+  }>;
+  plano30Dias: Array<{
+    dia: number;
+    tarefa: string;
+    tipo: 'descoberta' | 'consideracao' | 'autoridade' | 'relacionamento' | 'prova_social' | 'conversao';
+  }>;
+  gargalos: Array<{
+    titulo: string;
+    impacto: string;
+  }>;
+  published: boolean;
+  createdAt: string;
+  rawReportMarkdown?: string;
+}
+
 export interface AdminStats {
   totalUsers: number;
   totalDiagnostics: number;

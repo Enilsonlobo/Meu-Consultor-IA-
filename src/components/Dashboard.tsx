@@ -101,24 +101,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) =>
     <div id="dashboard-tab-root" className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
       
       {/* Top Header Card */}
-      <div className="bg-slate-950 border border-slate-900 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-xl">
+      <div className="bg-gradient-to-b from-slate-950 to-slate-950/90 border border-slate-900/80 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
         
         <div className="space-y-4 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold animate-pulse">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/5 border border-indigo-500/10 text-indigo-400 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
             <span>Olá, {profile.displayName || "Empresário"} — MEU CONSULTOR IA®</span>
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight">
-              Empresas não crescem por acaso.
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+              Empresas não crescem <span className="font-serif italic font-normal text-slate-400 block sm:inline">por acaso.</span>
             </h1>
-            <h2 className="text-lg md:text-xl font-bold text-indigo-400 tracking-tight">
+            <h2 className="text-base md:text-lg font-semibold text-indigo-400 tracking-tight leading-relaxed">
               Crescem quando tomam decisões melhores.
             </h2>
-            <p className="text-xs md:text-sm text-slate-400 font-semibold leading-relaxed max-w-2xl">
-              O Meu Consultor IA® analisa sua empresa, identifica oportunidades e cria planos de ação estratégicos para acelerar seu crescimento.
+            <p className="text-xs md:text-sm text-slate-400 font-semibold leading-relaxed max-w-xl">
+              O <strong>Meu Consultor IA®</strong> é o seu conselheiro de negócios 24 horas. Realize diagnósticos táticos, audite seu Instagram e estruture roteiros de vendas sob o Método CRESCER™.
             </p>
           </div>
 
