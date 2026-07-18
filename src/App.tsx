@@ -429,7 +429,7 @@ Não foi possível estabelecer contato síncrono com a rede neural no momento. N
   const finishedDiag = latestDiagnostics.find(d => d.completed);
 
   return (
-    <div id="mci-app-container" className="min-h-screen bg-slate-900 text-slate-100 flex flex-col lg:flex-row font-sans overflow-x-hidden">
+    <div id="mci-app-container" className="h-screen bg-slate-900 text-slate-100 flex flex-col lg:flex-row font-sans overflow-hidden">
       
       {/* 1. Left Sidebar Navigation rail */}
       <Sidebar 
@@ -453,7 +453,7 @@ Não foi possível estabelecer contato síncrono com a rede neural no momento. N
       />
 
       {/* 2. Main Content Board Canvas */}
-      <main id="main-content-canvas" className="flex-1 min-h-screen bg-slate-900 overflow-y-auto pb-12">
+      <main id="main-content-canvas" className="flex-1 bg-slate-900 overflow-y-auto pb-12 min-h-0">
         {activeTab === 'dashboard' && (
           <Dashboard 
             profile={currentUser} 

@@ -217,34 +217,34 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
     <div id="dashboard-tab-root" className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
       
       {/* 📋 INICIAL DIAGNOSIS SECTION (BOTAO DE ACESSO INTUITIVO & PERFIL ESTRATÉGICO) */}
-      {!profile.hasCompletedInitialDiag ? (
-        <div className="bg-gradient-to-r from-indigo-950 via-slate-950 to-indigo-900 border-2 border-indigo-500 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-                <span>Passo 1: Comece por Aqui</span>
-              </div>
-              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight leading-tight">
-                Defina o seu Diagnóstico Inicial Inteligente 🚀
-              </h2>
-              <p className="text-xs md:text-sm text-slate-400 font-medium max-w-2xl leading-relaxed">
-                Antes de iniciar as outras ferramentas, calibre o seu <strong>Meu Consultor IA®</strong>. 
-                Gere o seu <strong>Perfil Estratégico Corporativo</strong> oficial para liberar recomendações personalizadas imediatamente.
-              </p>
+      <div className="bg-slate-950 border border-slate-900 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+              <span>Passo 1: Comece por Aqui</span>
             </div>
-            <button
-              id="btn-trigger-initial-diag"
-              onClick={() => setShowInitialDiagModal(true)}
-              className="px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all uppercase tracking-wider shrink-0 cursor-pointer border border-indigo-400/20 active:scale-[0.98]"
-            >
-              <span>Realizar Diagnóstico Inicial</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <h2 className="text-xl font-extrabold text-white mt-1.5 tracking-tight leading-tight">
+              Defina o seu Diagnóstico Inicial Inteligente 🚀
+            </h2>
+            <p className="text-xs text-slate-500 max-w-2xl leading-relaxed mt-1">
+              Antes de iniciar as outras ferramentas, calibre o seu <strong>Meu Consultor IA®</strong>. 
+              Gere o seu <strong>Perfil Estratégico Corporativo</strong> oficial para liberar recomendações personalizadas imediatamente.
+            </p>
           </div>
+          <button
+            id="btn-trigger-initial-diag"
+            onClick={() => setShowInitialDiagModal(true)}
+            className="px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all uppercase tracking-wider shrink-0 cursor-pointer border border-indigo-400/20 active:scale-[0.98]"
+          >
+            <span>Realizar Diagnóstico Inicial</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
-      ) : (
+      </div>
+
+      {profile.hasCompletedInitialDiag && (
         <div className="bg-gradient-to-b from-slate-950 to-slate-950/80 border border-slate-900 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
           

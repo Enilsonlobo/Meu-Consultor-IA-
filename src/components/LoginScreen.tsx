@@ -34,7 +34,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
     setError(null);
     setMessage(null);
 
-    if (!email.trim()) {
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail) {
       setError("Por favor, preencha o campo de e-mail.");
       return;
     }
@@ -48,7 +50,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
 
     try {
       if (mode === 'login') {
-        await auth.signInWithEmailAndPassword(email, password);
+        await auth.signInWithEmailAndPassword(cleanEmail, password);
         onSuccess();
       } else if (mode === 'signup') {
         if (password !== confirmPassword) {
@@ -61,13 +63,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
           setLoading(false);
           return;
         }
-        await auth.createUserWithEmailAndPassword(email, password);
+        await auth.createUserWithEmailAndPassword(cleanEmail, password);
         setMessage("Conta criada com sucesso!");
         setTimeout(() => {
           onSuccess();
         }, 1000);
       } else if (mode === 'forgot') {
-        await auth.sendPasswordResetEmail(email);
+        await auth.sendPasswordResetEmail(cleanEmail);
         setMessage("Se as credenciais corresponderem a uma conta ativa, você receberá um link para redefinir sua senha.");
       }
     } catch (err: any) {
@@ -80,7 +82,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
 
   const handleGoogleLogin = async () => {
     setError(null);
-    let targetEmail = email.trim();
+    let targetEmail = email.trim().toLowerCase();
 
     if (!targetEmail) {
       const promptEmail = window.prompt(
@@ -92,7 +94,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
         return;
       }
       if (promptEmail.trim()) {
-        targetEmail = promptEmail.trim();
+        targetEmail = promptEmail.trim().toLowerCase();
         setEmail(targetEmail);
       } else {
         targetEmail = "empresa@consultoria.com.br";

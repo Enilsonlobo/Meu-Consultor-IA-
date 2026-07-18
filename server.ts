@@ -6,7 +6,6 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 
@@ -782,6 +781,143 @@ app.use(express.json());
     console.warn("Failed to load/initialize simulated_db.json:", e);
   }
 
+  // Ensure default users are seeded on server startup
+  const defaultTrialUser = {
+    uid: "trial-owner-123",
+    email: "empresa@consultoria.com.br",
+    displayName: "Roberto Albuquerque",
+    empresa: "Autoescola Exemplo",
+    segmento: "Educação para formação de condutores",
+    cidade: "Angra dos Reis – RJ",
+    telefone: "(11) 98765-4321",
+    funcionarios: "12 funcionários",
+    faturamento: "R$ 45.000 / mês",
+    objetivos: "Aumentar matrículas",
+    scoreCrescer: 72,
+    ultimoAcesso: new Date().toLocaleDateString('pt-BR'),
+    ultimoDiagnostico: "14/07/2026",
+    plan: "Premium",
+    createdAt: "01/06/2026",
+    password: "123",
+    pillars: {
+      conhecimento: 80,
+      relacionamento: 75,
+      estrategia: 60,
+      sistema: 70,
+      comunicacao: 85,
+      eficiencia: 65,
+      resultados: 70
+    },
+    hasCompletedInitialDiag: true,
+    initialDiagAnswers: {
+      empresa: "Autoescola Exemplo",
+      segmento: "Educação para formação de condutores",
+      mercado: "Serviços locais",
+      cidade: "Angra dos Reis",
+      uf: "RJ",
+      publicoPredominante: "18 a 35 anos",
+      principalObjetivo: "Aumentar matrículas",
+      maiorGargalo: "Baixa geração de leads pelo Instagram e poucas avaliações no Google.",
+      nivelMaturidadeDigital: 7,
+      nivelOrganizacaoComercial: 6,
+      prioridadeEstrategica: "Marketing e Conversão"
+    },
+    initialDiagReport: `📋 PERFIL ESTRATÉGICO DA EMPRESA
+
+Empresa: Autoescola Exemplo
+
+Segmento:
+Educação para formação de condutores
+
+Mercado:
+Serviços locais
+
+Cidade:
+Angra dos Reis – RJ
+
+Público predominante:
+18 a 35 anos
+
+Principal objetivo:
+Aumentar matrículas
+
+Maior gargalo:
+Baixa geração de leads pelo Instagram e poucas avaliações no Google.`
+  };
+
+  const defaultAdminUser = {
+    uid: "mestre-admin-32",
+    email: "enilsonlobo32@gmail.com",
+    displayName: "Mestre",
+    empresa: "Autoescola Exemplo",
+    segmento: "Educação para formação de condutores",
+    cidade: "Angra dos Reis – RJ",
+    telefone: "",
+    funcionarios: "1 a 5",
+    faturamento: "Não informado",
+    objetivos: "Aumentar matrículas",
+    scoreCrescer: 72,
+    ultimoAcesso: new Date().toLocaleDateString('pt-BR'),
+    ultimoDiagnostico: "14/07/2026",
+    plan: "Premium",
+    createdAt: "01/06/2026",
+    password: "123",
+    pillars: {
+      conhecimento: 80,
+      relacionamento: 75,
+      estrategia: 60,
+      sistema: 70,
+      comunicacao: 85,
+      eficiencia: 65,
+      resultados: 70
+    },
+    hasCompletedInitialDiag: true,
+    initialDiagAnswers: {
+      empresa: "Autoescola Exemplo",
+      segmento: "Educação para formação de condutores",
+      mercado: "Serviços locais",
+      cidade: "Angra dos Reis",
+      uf: "RJ",
+      publicoPredominante: "18 a 35 anos",
+      principalObjetivo: "Aumentar matrículas",
+      maiorGargalo: "Baixa geração de leads pelo Instagram e poucas avaliações no Google.",
+      nivelMaturidadeDigital: 7,
+      nivelOrganizacaoComercial: 6,
+      prioridadeEstrategica: "Marketing e Conversão"
+    },
+    initialDiagReport: `📋 PERFIL ESTRATÉGICO DA EMPRESA
+
+Empresa: Autoescola Exemplo
+
+Segmento:
+Educação para formação de condutores
+
+Mercado:
+Serviços locais
+
+Cidade:
+Angra dos Reis – RJ
+
+Público predominante:
+18 a 35 anos
+
+Principal objetivo:
+Aumentar matrículas
+
+Maior gargalo:
+Baixa geração de leads pelo Instagram e poucas avaliações no Google.`
+  };
+
+  if (!simulatedData.users) {
+    simulatedData.users = [];
+  }
+  if (!simulatedData.users.find((u: any) => u.uid === defaultTrialUser.uid)) {
+    simulatedData.users.push(defaultTrialUser);
+  }
+  if (!simulatedData.users.find((u: any) => u.email.toLowerCase() === "enilsonlobo32@gmail.com")) {
+    simulatedData.users.push(defaultAdminUser);
+  }
+
   function saveSimulatedDb() {
     try {
       fs.writeFileSync(DB_FILE, JSON.stringify(simulatedData, null, 2), "utf-8");
@@ -789,6 +925,8 @@ app.use(express.json());
       console.warn("Failed to save simulated_db.json to disk:", e);
     }
   }
+
+  saveSimulatedDb();
 
   // API - Get all docs for a collection
   app.get("/api/simdb/get", (req, res) => {
@@ -855,7 +993,14 @@ app.use(express.json());
   app.post("/api/simdb/users/set", (req, res) => {
     const { users } = req.body;
     if (Array.isArray(users)) {
-      simulatedData.users = users;
+      // Merge users by uid to prevent wiping out other devices' users
+      const existingUsersMap = new Map(simulatedData.users.map(u => [u.uid, u]));
+      users.forEach((u: any) => {
+        if (u && u.uid) {
+          existingUsersMap.set(u.uid, { ...existingUsersMap.get(u.uid), ...u });
+        }
+      });
+      simulatedData.users = Array.from(existingUsersMap.values());
       saveSimulatedDb();
       res.json({ success: true });
     } else {
@@ -865,20 +1010,32 @@ app.use(express.json());
   // --- END CENTRALIZED SIMULATED DATABASE SYNC ENDPOINTS ---
 
   // Vite & Server Listen Integration
-  if (process.env.VERCEL !== "1") {
+  const isVercel = process.env.VERCEL === "1";
+  const distPath = path.join(process.cwd(), 'dist');
+
+  if (isVercel) {
+    // Vercel serverless environment - serve static files from dist and register SPA fallback, without app.listen()
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  } else {
     const PORT = 3000;
     if (process.env.NODE_ENV !== "production") {
-      createViteServer({
-        server: { middlewareMode: true },
-        appType: "spa",
-      }).then((vite) => {
-        app.use(vite.middlewares);
-        app.listen(PORT, "0.0.0.0", () => {
-          console.log(`[Meu Consultor IA®] Servidor dev rodando na porta ${PORT}`);
+      import("vite").then(({ createServer: createViteServer }) => {
+        createViteServer({
+          server: { middlewareMode: true },
+          appType: "spa",
+        }).then((vite) => {
+          app.use(vite.middlewares);
+          app.listen(PORT, "0.0.0.0", () => {
+            console.log(`[Meu Consultor IA®] Servidor dev rodando na porta ${PORT}`);
+          });
         });
+      }).catch(err => {
+        console.error("Erro ao carregar o Vite dinamicamente:", err);
       });
     } else {
-      const distPath = path.join(process.cwd(), 'dist');
       app.use(express.static(distPath));
       app.get('*', (req, res) => {
         res.sendFile(path.join(distPath, 'index.html'));

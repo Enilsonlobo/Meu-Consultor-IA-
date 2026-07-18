@@ -73,6 +73,79 @@ const DB_WHITELIST_KEY = "mci_mock_db_whitelist";
 const DB_SETTINGS_KEY = "mci_mock_db_settings";
 const DB_INSTAGRAM_AUDITS_KEY = "mci_mock_db_instagram_audits";
 
+// Memory storage fallbacks in case localStorage/sessionStorage are disabled or throw SecurityError in iframes or private browsing
+const memoryStorage = new Map<string, string>();
+
+const safeLocalStorage = {
+  getItem(key: string): string | null {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        return localStorage.getItem(key);
+      }
+    } catch (e) {
+      console.warn(`[Storage] localStorage.getItem failed for ${key}, falling back to memory:`, e);
+    }
+    return memoryStorage.get(key) || null;
+  },
+  setItem(key: string, value: string): void {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem(key, value);
+        return;
+      }
+    } catch (e) {
+      console.warn(`[Storage] localStorage.setItem failed for ${key}, falling back to memory:`, e);
+    }
+    memoryStorage.set(key, value);
+  },
+  removeItem(key: string): void {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.removeItem(key);
+        return;
+      }
+    } catch (e) {
+      console.warn(`[Storage] localStorage.removeItem failed for ${key}, falling back to memory:`, e);
+    }
+    memoryStorage.delete(key);
+  }
+};
+
+const safeSessionStorage = {
+  getItem(key: string): string | null {
+    try {
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        return sessionStorage.getItem(key);
+      }
+    } catch (e) {
+      console.warn(`[Storage] sessionStorage.getItem failed for ${key}, falling back to memory:`, e);
+    }
+    return memoryStorage.get(`session_${key}`) || null;
+  },
+  setItem(key: string, value: string): void {
+    try {
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        sessionStorage.setItem(key, value);
+        return;
+      }
+    } catch (e) {
+      console.warn(`[Storage] sessionStorage.setItem failed for ${key}, falling back to memory:`, e);
+    }
+    memoryStorage.set(`session_${key}`, value);
+  },
+  removeItem(key: string): void {
+    try {
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        sessionStorage.removeItem(key);
+        return;
+      }
+    } catch (e) {
+      console.warn(`[Storage] sessionStorage.removeItem failed for ${key}, falling back to memory:`, e);
+    }
+    memoryStorage.delete(`session_${key}`);
+  }
+};
+
 export const ALWAYS_ALLOWED_EMAILS = [
   "enilsonlobo32@gmail.com",
   "admin@consultoria.com.br",
@@ -81,7 +154,7 @@ export const ALWAYS_ALLOWED_EMAILS = [
 
 const seedDefaultDbSettings = () => {
   const whitelistKey = DB_WHITELIST_KEY;
-  let currentWhitelist = JSON.parse(localStorage.getItem(whitelistKey) || "[]");
+  let currentWhitelist = JSON.parse(safeLocalStorage.getItem(whitelistKey) || "[]");
   
   // Active migration: filter out any old occurrences of the owner's personal email from the visible local database list
   const filteredWhitelist = currentWhitelist.filter(
@@ -94,24 +167,24 @@ const seedDefaultDbSettings = () => {
       { id: "wl-2", email: "admin@consultoria.com.br", name: "Administrador Geral" },
       { id: "wl-3", email: "empresa@consultoria.com.br", name: "Usuário de Demonstração" },
     ];
-    localStorage.setItem(whitelistKey, JSON.stringify(initialWhitelist));
+    safeLocalStorage.setItem(whitelistKey, JSON.stringify(initialWhitelist));
   } else if (filteredWhitelist.length !== currentWhitelist.length) {
-    localStorage.setItem(whitelistKey, JSON.stringify(filteredWhitelist));
+    safeLocalStorage.setItem(whitelistKey, JSON.stringify(filteredWhitelist));
   }
 
   const settingsKey = DB_SETTINGS_KEY;
-  const currentSettings = JSON.parse(localStorage.getItem(settingsKey) || "[]");
+  const currentSettings = JSON.parse(safeLocalStorage.getItem(settingsKey) || "[]");
   if (currentSettings.length === 0) {
     const initialSettings = [
       { id: "whitelist_enabled", key: "whitelist_enabled", value: true, name: "Exigir Liberação de E-mail" }
     ];
-    localStorage.setItem(settingsKey, JSON.stringify(initialSettings));
+    safeLocalStorage.setItem(settingsKey, JSON.stringify(initialSettings));
   }
 };
 seedDefaultDbSettings();
 
-const getLocalUsers = () => JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || "[]");
-const setLocalUsers = (users: any[]) => localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
+const getLocalUsers = () => JSON.parse(safeLocalStorage.getItem(LOCAL_USERS_KEY) || "[]");
+const setLocalUsers = (users: any[]) => safeLocalStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
 
 // Central Server Sync Helpers for Simulated Mock Mode
 async function fetchServerDocs(collectionName: string): Promise<any[]> {
@@ -271,12 +344,83 @@ Próxima etapa recomendada:
 Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`
 };
 
+const defaultAdminUser = {
+  uid: "mestre-admin-32",
+  email: "enilsonlobo32@gmail.com",
+  displayName: "Mestre",
+  empresa: "Autoescola Exemplo",
+  segmento: "Educação para formação de condutores",
+  cidade: "Angra dos Reis – RJ",
+  telefone: "",
+  funcionarios: "1 a 5",
+  faturamento: "Não informado",
+  objetivos: "Aumentar matrículas",
+  scoreCrescer: 72,
+  ultimoAcesso: new Date().toLocaleDateString('pt-BR'),
+  ultimoDiagnostico: "14/07/2026",
+  plan: "Premium",
+  createdAt: "01/06/2026",
+  pillars: {
+    conhecimento: 80,
+    relacionamento: 75,
+    estrategia: 60,
+    sistema: 70,
+    comunicacao: 85,
+    eficiencia: 65,
+    resultados: 70
+  },
+  hasCompletedInitialDiag: true,
+  initialDiagAnswers: {
+    empresa: "Autoescola Exemplo",
+    segmento: "Educação para formação de condutores",
+    mercado: "Serviços locais",
+    cidade: "Angra dos Reis",
+    uf: "RJ",
+    publicoPredominante: "18 a 35 anos",
+    principalObjetivo: "Aumentar matrículas",
+    maiorGargalo: "Baixa geração de leads pelo Instagram e poucas avaliações no Google.",
+    nivelMaturidadeDigital: 7,
+    nivelOrganizacaoComercial: 6,
+    prioridadeEstrategica: "Marketing e Conversão"
+  },
+  initialDiagReport: `📋 PERFIL ESTRATÉGICO DA EMPRESA
+
+Empresa: Autoescola Exemplo
+
+Segmento:
+Educação para formação de condutores
+
+Mercado:
+Serviços locais
+
+Cidade:
+Angra dos Reis – RJ
+
+Público predominante:
+18 a 35 anos
+
+Principal objetivo:
+Aumentar matrículas
+
+Maior gargalo:
+Baixa geração de leads pelo Instagram e poucas avaliações no Google.`
+};
+
 // Seed simulated db helper
 const seedDefaultUser = () => {
   const users = getLocalUsers();
+  let modified = false;
   if (!users.find((u: any) => u.uid === defaultTrialUser.uid)) {
     users.push({ ...defaultTrialUser, password: "123" });
+    modified = true;
+  }
+  if (!users.find((u: any) => u.email.toLowerCase() === "enilsonlobo32@gmail.com")) {
+    users.push({ ...defaultAdminUser, password: "123" });
+    modified = true;
+  }
+  if (modified) {
     setLocalUsers(users);
+    saveServerUsers(users).catch(e => console.warn("[Seed] Failed to save users to server:", e));
   }
 };
 seedDefaultUser();
@@ -288,9 +432,9 @@ class MockAuth {
   constructor() {
     try {
       // Clean up legacy localStorage current user
-      localStorage.removeItem(CURRENT_USER_KEY);
+      safeLocalStorage.removeItem(CURRENT_USER_KEY);
       
-      const savedUser = sessionStorage.getItem(CURRENT_USER_KEY);
+      const savedUser = safeSessionStorage.getItem(CURRENT_USER_KEY);
       if (savedUser) {
         this.currentUser = JSON.parse(savedUser);
       } else {
@@ -325,16 +469,16 @@ class MockAuth {
     let user = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
     
     if (!user) {
-      throw new Error("E-mail ou senha incorretos. Se este for seu primeiro acesso, clique na aba 'Cadastrar Minha Senha' no topo do formulário para registrar sua senha de acesso.");
+      throw new Error("E-mail ou senha incorretos. Se este for seu primeiro acesso neste aparelho ou navegador, clique na aba 'Cadastrar Minha Senha' no topo para registrar sua senha e liberar seu acesso de imediato.");
     }
 
     if (user.password && user.password !== pass) {
-      throw new Error("Senha incorreta. Se você esqueceu sua senha, utilize a redefinição.");
+      throw new Error("Senha incorreta. Se você esqueceu sua senha ou está acessando de um novo aparelho, você pode registrar ou atualizar sua senha na aba 'Cadastrar Minha Senha' no topo.");
     }
 
     const { password, ...safeUser } = user;
     this.currentUser = { ...safeUser, ultimoAcesso: new Date().toLocaleDateString('pt-BR') };
-    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+    safeSessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
     this.triggerStateChange();
     return { user: this.currentUser };
   }
@@ -347,8 +491,18 @@ class MockAuth {
       setLocalUsers(users);
     }
 
-    if (users.find((u: any) => u.email.toLowerCase() === email.toLowerCase())) {
-      throw new Error("E-mail já está em uso por outra conta.");
+    const existingUser = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
+    if (existingUser) {
+      // Self-healing password registration/reset on new devices or browsers
+      existingUser.password = pass;
+      await saveServerUsers(users);
+      setLocalUsers(users);
+      this.currentUser = { ...existingUser, ultimoAcesso: new Date().toLocaleDateString('pt-BR') };
+      const { password, ...safeUser } = this.currentUser;
+      this.currentUser = safeUser;
+      safeSessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+      this.triggerStateChange();
+      return { user: this.currentUser };
     }
 
     const defaultAnswers = {
@@ -436,15 +590,15 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
 
     const { password, ...safeUser } = newUser;
     this.currentUser = safeUser;
-    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+    safeSessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
     this.triggerStateChange();
     return { user: this.currentUser };
   }
 
   async signOut() {
     this.currentUser = null;
-    sessionStorage.removeItem(CURRENT_USER_KEY);
-    localStorage.removeItem(CURRENT_USER_KEY); // Clean up legacy local state too
+    safeSessionStorage.removeItem(CURRENT_USER_KEY);
+    safeLocalStorage.removeItem(CURRENT_USER_KEY); // Clean up legacy local state too
     this.triggerStateChange();
   }
 
@@ -456,7 +610,7 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
   async updateProfileData(data: Partial<typeof defaultTrialUser>) {
     if (!this.currentUser) return;
     this.currentUser = { ...this.currentUser, ...data };
-    sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+    safeSessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
 
     let users = await fetchServerUsers();
     if (!users || users.length === 0) {
@@ -477,11 +631,11 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
 class MockDb {
   // Simple table structures saved in local storage
   private getTable(key: string) {
-    return JSON.parse(localStorage.getItem(key) || "[]");
+    return JSON.parse(safeLocalStorage.getItem(key) || "[]");
   }
 
   private setTable(key: string, data: any[]) {
-    localStorage.setItem(key, JSON.stringify(data));
+    safeLocalStorage.setItem(key, JSON.stringify(data));
   }
 
   async getDocs(collectionName: string, queryConditions: any[] = []) {
@@ -703,16 +857,17 @@ class FirebaseAuthAdapter {
   }
 
   async signInWithEmailAndPassword(email: string, pass: string) {
-    const isAllowed = await checkEmailAuthorization(email);
+    const cleanEmail = email.trim().toLowerCase();
+    const isAllowed = await checkEmailAuthorization(cleanEmail);
     if (!isAllowed) {
       throw new Error("Acesso Restrito: Este e-mail não possui liberação ativa para a plataforma Meu Consultor IA®. Entre em contato com a equipe de suporte para habilitar seu acesso.");
     }
 
     if (usingMock || !firebaseAuth) {
-      return mockAuthInstance.signInWithEmailAndPassword(email, pass);
+      return mockAuthInstance.signInWithEmailAndPassword(cleanEmail, pass);
     } else {
       try {
-        const res = await signInWithEmailAndPassword(firebaseAuth, email, pass);
+        const res = await signInWithEmailAndPassword(firebaseAuth, cleanEmail, pass);
         return { user: res.user };
       } catch (err: any) {
         console.error("Erro ao autenticar no Firebase:", err);
@@ -723,29 +878,30 @@ class FirebaseAuthAdapter {
           err.code === "auth/user-not-found" ||
           err.code === "auth/invalid-email"
         ) {
-          throw new Error("E-mail ou senha incorretos. Se este for seu primeiro acesso, clique na aba 'Cadastrar Minha Senha' no topo do formulário para registrar sua senha de acesso.");
+          throw new Error("E-mail ou senha incorretos. Se este for seu primeiro acesso neste aparelho ou navegador, clique na aba 'Cadastrar Minha Senha' no topo para registrar sua senha e liberar seu acesso de imediato.");
         }
         
         // Otherwise, it might be a connectivity/initialization fallback
         console.warn("Conexão falhou, caindo de volta para a camada local temporária.");
         usingMock = true;
         this.initAuth();
-        return mockAuthInstance.signInWithEmailAndPassword(email, pass);
+        return mockAuthInstance.signInWithEmailAndPassword(cleanEmail, pass);
       }
     }
   }
 
   async createUserWithEmailAndPassword(email: string, pass: string) {
-    const isAllowed = await checkEmailAuthorization(email);
+    const cleanEmail = email.trim().toLowerCase();
+    const isAllowed = await checkEmailAuthorization(cleanEmail);
     if (!isAllowed) {
       throw new Error("Acesso Restrito: Este e-mail não possui liberação ativa para a plataforma Meu Consultor IA®. Entre em contato com a equipe de suporte para habilitar seu acesso.");
     }
 
     if (usingMock || !firebaseAuth) {
-      return mockAuthInstance.createUserWithEmailAndPassword(email, pass);
+      return mockAuthInstance.createUserWithEmailAndPassword(cleanEmail, pass);
     } else {
       try {
-        const res = await createUserWithEmailAndPassword(firebaseAuth, email, pass);
+        const res = await createUserWithEmailAndPassword(firebaseAuth, cleanEmail, pass);
         return { user: res.user };
       } catch (err: any) {
         if (err.code === "auth/email-already-in-use") {
@@ -754,7 +910,7 @@ class FirebaseAuthAdapter {
         console.error("Firebase Auth signup failed, falling back to local memory signup:", err);
         usingMock = true;
         this.initAuth();
-        return mockAuthInstance.createUserWithEmailAndPassword(email, pass);
+        return mockAuthInstance.createUserWithEmailAndPassword(cleanEmail, pass);
       }
     }
   }

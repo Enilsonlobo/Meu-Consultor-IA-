@@ -78,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Mobile Drawer Header bar */}
-      <div className="lg:hidden flex items-center justify-between px-6 py-4 bg-slate-950 border-b border-slate-800 text-white sticky top-0 z-30">
+      <div className="lg:hidden flex items-center justify-between px-6 py-3.5 bg-slate-950 border-b border-slate-800 text-white sticky top-0 z-30">
         <div className="flex items-center gap-2">
           <div className="bg-indigo-600 p-1.5 rounded-lg text-white">
             <Sparkles className="w-4 h-4" />
@@ -88,9 +88,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           id="btn-mobile-menu-toggle"
           onClick={() => setIsOpen(!isOpen)}
-          className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300"
+          className="p-2.5 rounded-xl hover:bg-slate-900 text-slate-200 active:bg-slate-850 active:scale-95 transition-all cursor-pointer flex items-center justify-center min-w-[44px] min-h-[44px]"
+          aria-label="Abrir menu"
         >
-          {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {isOpen ? <X className="w-6 h-6 text-indigo-400" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
@@ -98,12 +99,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {isOpen && (
         <div 
           onClick={() => setIsOpen(false)}
-          className="lg:hidden fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-20"
+          className="lg:hidden fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-40 transition-opacity"
         />
       )}
 
       {/* Actual Sidebar Navigation Container */}
-      <aside className={`fixed inset-y-0 left-0 lg:sticky top-0 z-30 lg:z-10 w-64 bg-slate-950 border-r border-slate-900 text-slate-300 flex flex-col justify-between h-screen transition-transform duration-300 transform lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 lg:sticky top-0 z-50 lg:z-10 w-64 bg-slate-950 border-r border-slate-900 text-slate-300 flex flex-col justify-between h-screen transition-transform duration-300 transform lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
         
         {/* Top Logo Panel */}
         <div className="p-6 border-b border-slate-900">
