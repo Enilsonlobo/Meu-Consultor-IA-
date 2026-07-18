@@ -216,6 +216,65 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
   return (
     <div id="dashboard-tab-root" className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
       
+      {/* Top Header Card */}
+      <div className="bg-gradient-to-b from-slate-950 to-slate-950/90 border border-slate-900/80 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="space-y-4 relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/5 border border-indigo-500/10 text-indigo-400 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Olá, {
+              profile.email?.toLowerCase() === "enilsonlobo32@gmail.com" || profile.displayName?.toLowerCase().includes("enilson")
+                ? "Mestre"
+                : (profile.displayName || "Empresário")
+            } — MEU CONSULTOR IA®</span>
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+              Empresas não crescem <span className="font-serif italic font-normal text-slate-400 block sm:inline">por acaso.</span>
+            </h1>
+            <h2 className="text-base md:text-lg font-semibold text-indigo-400 tracking-tight leading-relaxed">
+              Crescem quando tomam decisões melhores.
+            </h2>
+            <p className="text-xs md:text-sm text-slate-400 font-semibold leading-relaxed max-w-xl">
+              O <strong>Meu Consultor IA®</strong> é o seu conselheiro de negócios 24 horas. Realize diagnósticos táticos, audite seu Instagram e estruture roteiros de vendas sob o Método CRESCER™.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-400 font-medium pt-1">
+            <span className="flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-slate-500" />
+              <strong>Empresa:</strong> {profile.empresa || "Não Informada"}
+            </span>
+            <span className="flex items-center gap-1.5 font-semibold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              {profile.segmento || "Segmento"}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-slate-500" />
+              {profile.cidade || "São Paulo"}
+            </span>
+          </div>
+        </div>
+
+        {/* Sync dates */}
+        <div className="flex flex-col gap-2.5 shrink-0 border-l border-slate-900 md:pl-8 text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-indigo-500" />
+            <span>Último Acesso: <strong>{profile.ultimoAcesso || "Hoje"}</strong></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-indigo-500" />
+            <span>Último Diagnóstico: <strong>{profile.ultimoDiagnostico || "Nunca realizado"}</strong></span>
+          </div>
+          <div className="mt-1">
+            <span className="px-2.5 py-1 bg-indigo-600/15 text-indigo-400 border border-indigo-500/20 rounded-full font-bold uppercase tracking-wider text-[9px]">
+              Assinatura: {profile.plan || "Membro"}
+            </span>
+          </div>
+        </div>
+      </div>
+      
       {/* 📋 INICIAL DIAGNOSIS SECTION (BOTAO DE ACESSO INTUITIVO & PERFIL ESTRATÉGICO) */}
       <div className="bg-slate-950 border border-slate-900 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl">
         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/5 rounded-full blur-2xl pointer-events-none" />
@@ -332,65 +391,6 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
           </div>
         </div>
       )}
-
-      {/* Top Header Card */}
-      <div className="bg-gradient-to-b from-slate-950 to-slate-950/90 border border-slate-900/80 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="space-y-4 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/5 border border-indigo-500/10 text-indigo-400 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Olá, {
-              profile.email?.toLowerCase() === "enilsonlobo32@gmail.com" || profile.displayName?.toLowerCase().includes("enilson")
-                ? "Mestre"
-                : (profile.displayName || "Empresário")
-            } — MEU CONSULTOR IA®</span>
-          </div>
-
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              Empresas não crescem <span className="font-serif italic font-normal text-slate-400 block sm:inline">por acaso.</span>
-            </h1>
-            <h2 className="text-base md:text-lg font-semibold text-indigo-400 tracking-tight leading-relaxed">
-              Crescem quando tomam decisões melhores.
-            </h2>
-            <p className="text-xs md:text-sm text-slate-400 font-semibold leading-relaxed max-w-xl">
-              O <strong>Meu Consultor IA®</strong> é o seu conselheiro de negócios 24 horas. Realize diagnósticos táticos, audite seu Instagram e estruture roteiros de vendas sob o Método CRESCER™.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-400 font-medium pt-1">
-            <span className="flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-slate-500" />
-              <strong>Empresa:</strong> {profile.empresa || "Não Informada"}
-            </span>
-            <span className="flex items-center gap-1.5 font-semibold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-              {profile.segmento || "Segmento"}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-slate-500" />
-              {profile.cidade || "São Paulo"}
-            </span>
-          </div>
-        </div>
-
-        {/* Sync dates */}
-        <div className="flex flex-col gap-2.5 shrink-0 border-l border-slate-900 md:pl-8 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-indigo-500" />
-            <span>Último Acesso: <strong>{profile.ultimoAcesso || "Hoje"}</strong></span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-indigo-500" />
-            <span>Último Diagnóstico: <strong>{profile.ultimoDiagnostico || "Nunca realizado"}</strong></span>
-          </div>
-          <div className="mt-1">
-            <span className="px-2.5 py-1 bg-indigo-600/15 text-indigo-400 border border-indigo-500/20 rounded-full font-bold uppercase tracking-wider text-[9px]">
-              Assinatura: {profile.plan || "Membro"}
-            </span>
-          </div>
-        </div>
-      </div>
 
       {/* Main Bento Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

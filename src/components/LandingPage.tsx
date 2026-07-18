@@ -39,13 +39,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin }) =>
 
           <div className="flex items-center gap-3">
             <button
-              id="btn-nav-signup"
-              onClick={onStart}
-              className="px-4 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
-            >
-              Criar Conta Grátis
-            </button>
-            <button
               id="btn-nav-login"
               onClick={onLogin}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/10 cursor-pointer"
@@ -98,18 +91,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin }) =>
           >
             <button
               id="btn-hero-cta"
-              onClick={onStart}
+              onClick={onLogin}
               className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl shadow-lg shadow-indigo-600/15 flex items-center justify-center gap-2.5 group transition-all cursor-pointer text-xs uppercase tracking-wider"
             >
-              <span>Cadastrar & Começar Consultoria</span>
+              <span>Acessar Plataforma</span>
               <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              id="btn-hero-login"
-              onClick={onLogin}
-              className="w-full sm:w-auto px-8 py-4 bg-slate-950 hover:bg-slate-900 text-slate-300 font-extrabold rounded-2xl border border-slate-900 transition-all text-center cursor-pointer text-xs uppercase tracking-wider"
-            >
-              Acessar Painel
             </button>
           </motion.div>
         </div>
@@ -232,10 +218,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin }) =>
               
               <button
                 id="btn-pricing-premium-single"
-                onClick={onStart}
+                onClick={onLogin}
                 className="mt-8 w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-indigo-600/20 uppercase tracking-wider cursor-pointer"
               >
-                Criar Conta & Começar Agora
+                Acessar Plataforma
               </button>
             </div>
           </div>

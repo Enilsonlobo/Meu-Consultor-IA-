@@ -120,6 +120,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
     }
   };
 
+  const handleQuickAccess = async (targetEmail: string, targetPass: string) => {
+    setError(null);
+    setMessage(null);
+    setLoading(true);
+    setEmail(targetEmail);
+    setPassword(targetPass);
+    try {
+      await auth.signInWithEmailAndPassword(targetEmail, targetPass);
+      setMessage(`Acesso rápido autorizado! Conectando como ${targetEmail === 'enilsonlobo32@gmail.com' ? 'Mestre' : 'Demo'}...`);
+      setTimeout(() => {
+        onSuccess();
+      }, 1000);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Erro ao conectar via acesso rápido.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div id="login-screen-root" className="min-h-screen bg-slate-900 flex flex-col justify-start md:justify-center items-center px-4 md:px-6 py-8 md:py-16 relative overflow-y-auto">
       
@@ -313,6 +333,40 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
             {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
+
+        {/* Quick Access Section */}
+        {mode === 'login' && (
+          <div id="quick-access-section" className="mt-6 pt-6 border-t border-slate-900 space-y-3">
+            <div className="flex items-center gap-2 text-slate-400">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Acesso Instantâneo Sem Senha</span>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-2.5">
+              <button
+                id="btn-quick-login-mestre"
+                type="button"
+                onClick={() => handleQuickAccess("enilsonlobo32@gmail.com", "78299226")}
+                disabled={loading}
+                className="w-full py-2.5 px-4 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/15 text-indigo-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer outline-none"
+              >
+                <span>Entrar como Mestre (Dono)</span>
+                <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-semibold">1-Click</span>
+              </button>
+
+              <button
+                id="btn-quick-login-demo"
+                type="button"
+                onClick={() => handleQuickAccess("empresa@consultoria.com.br", "123")}
+                disabled={loading}
+                className="w-full py-2.5 px-4 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/15 text-emerald-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer outline-none"
+              >
+                <span>Entrar como Empresa Demo</span>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold">1-Click</span>
+              </button>
+            </div>
+          </div>
+        )}
 
 
 

@@ -431,14 +431,10 @@ class MockAuth {
 
   constructor() {
     try {
-      // Clean up legacy localStorage current user
-      safeLocalStorage.removeItem(CURRENT_USER_KEY);
-      
-      const savedUser = safeSessionStorage.getItem(CURRENT_USER_KEY);
+      const savedUser = safeLocalStorage.getItem(CURRENT_USER_KEY);
       if (savedUser) {
         this.currentUser = JSON.parse(savedUser);
       } else {
-        // Do not auto-login to force users to use landing & credentials screen
         this.currentUser = null;
       }
     } catch (e) {
@@ -478,7 +474,7 @@ class MockAuth {
 
     const { password, ...safeUser } = user;
     this.currentUser = { ...safeUser, ultimoAcesso: new Date().toLocaleDateString('pt-BR') };
-    safeSessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+    safeLocalStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
     this.triggerStateChange();
     return { user: this.currentUser };
   }
@@ -500,7 +496,7 @@ class MockAuth {
       this.currentUser = { ...existingUser, ultimoAcesso: new Date().toLocaleDateString('pt-BR') };
       const { password, ...safeUser } = this.currentUser;
       this.currentUser = safeUser;
-      safeSessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+      safeLocalStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
       this.triggerStateChange();
       return { user: this.currentUser };
     }
@@ -590,15 +586,14 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
 
     const { password, ...safeUser } = newUser;
     this.currentUser = safeUser;
-    safeSessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+    safeLocalStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
     this.triggerStateChange();
     return { user: this.currentUser };
   }
 
   async signOut() {
     this.currentUser = null;
-    safeSessionStorage.removeItem(CURRENT_USER_KEY);
-    safeLocalStorage.removeItem(CURRENT_USER_KEY); // Clean up legacy local state too
+    safeLocalStorage.removeItem(CURRENT_USER_KEY);
     this.triggerStateChange();
   }
 
@@ -610,7 +605,7 @@ Auditoria de Instagram + Diagnóstico CRESCER™ + Plano de Marketing.`;
   async updateProfileData(data: Partial<typeof defaultTrialUser>) {
     if (!this.currentUser) return;
     this.currentUser = { ...this.currentUser, ...data };
-    safeSessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
+    safeLocalStorage.setItem(CURRENT_USER_KEY, JSON.stringify(this.currentUser));
 
     let users = await fetchServerUsers();
     if (!users || users.length === 0) {

@@ -781,6 +781,59 @@ app.use(express.json());
     console.warn("Failed to load/initialize simulated_db.json:", e);
   }
 
+  // Sincronização em nuvem para persistência definitiva (Multi-device / Cloud Run)
+  const KVDB_URL = "https://kvdb.io/mci_d9dc0ed30c2c/simulated_db";
+  (async () => {
+    try {
+      console.log("[Sync] Tentando sincronizar banco de dados com a nuvem (kvdb.io)...");
+      const remoteResponse = await Promise.race([
+        fetch(KVDB_URL),
+        new Promise<Response>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3500))
+      ]);
+      if (remoteResponse.ok) {
+        const remoteText = await remoteResponse.text();
+        if (remoteText && remoteText.trim().startsWith("{")) {
+          const parsed = JSON.parse(remoteText);
+          if (parsed && Array.isArray(parsed.users)) {
+            // Merge lists carefully to keep both local and remote changes
+            const mergedUsers = [...simulatedData.users];
+            if (parsed.users && Array.isArray(parsed.users)) {
+              parsed.users.forEach((remoteU: any) => {
+                const idx = mergedUsers.findIndex((u: any) => u.uid === remoteU.uid);
+                if (idx > -1) {
+                  mergedUsers[idx] = { ...mergedUsers[idx], ...remoteU };
+                } else {
+                  mergedUsers.push(remoteU);
+                }
+              });
+            }
+
+            const mergedWhitelist = [...simulatedData.whitelist];
+            if (parsed.whitelist && Array.isArray(parsed.whitelist)) {
+              parsed.whitelist.forEach((remoteW: any) => {
+                if (remoteW && remoteW.email && !mergedWhitelist.some((w: any) => w.email?.toLowerCase() === remoteW.email?.toLowerCase())) {
+                  mergedWhitelist.push(remoteW);
+                }
+              });
+            }
+
+            simulatedData = {
+              ...simulatedData,
+              ...parsed,
+              users: mergedUsers,
+              whitelist: mergedWhitelist
+            };
+            
+            fs.writeFileSync(DB_FILE, JSON.stringify(simulatedData, null, 2), "utf-8");
+            console.log("[Sync] Sincronização inicial em nuvem concluída com sucesso.");
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[Sync] Usando arquivo local pois a sincronização inicial em nuvem falhou ou excedeu tempo limite:", e);
+    }
+  })();
+
   // Ensure default users are seeded on server startup
   const defaultTrialUser = {
     uid: "trial-owner-123",
@@ -921,6 +974,15 @@ Baixa geração de leads pelo Instagram e poucas avaliações no Google.`
   function saveSimulatedDb() {
     try {
       fs.writeFileSync(DB_FILE, JSON.stringify(simulatedData, null, 2), "utf-8");
+      
+      // Realiza o backup remoto em segundo plano (assíncrono e não bloqueante)
+      fetch(KVDB_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(simulatedData)
+      }).catch(err => {
+        console.warn("[Sync] Falha ao enviar backup para a nuvem:", err);
+      });
     } catch (e) {
       console.warn("Failed to save simulated_db.json to disk:", e);
     }
