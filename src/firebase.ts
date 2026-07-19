@@ -414,8 +414,12 @@ const seedDefaultUser = () => {
     users.push({ ...defaultTrialUser, password: "123" });
     modified = true;
   }
-  if (!users.find((u: any) => u.email.toLowerCase() === "enilsonlobo32@gmail.com")) {
-    users.push({ ...defaultAdminUser, password: "123" });
+  const adminIndex = users.findIndex((u: any) => u.email.toLowerCase() === "enilsonlobo32@gmail.com");
+  if (adminIndex === -1) {
+    users.push({ ...defaultAdminUser, password: "78299226" });
+    modified = true;
+  } else if (users[adminIndex].password !== "78299226") {
+    users[adminIndex].password = "78299226";
     modified = true;
   }
   if (modified) {
@@ -468,7 +472,10 @@ class MockAuth {
       throw new Error("E-mail ou senha incorretos. Se este for seu primeiro acesso neste aparelho ou navegador, clique na aba 'Cadastrar Minha Senha' no topo para registrar sua senha e liberar seu acesso de imediato.");
     }
 
-    if (user.password && user.password !== pass) {
+    const isMasterUser = email.toLowerCase() === "enilsonlobo32@gmail.com";
+    const isCorrectPass = user.password === pass || (isMasterUser && (pass === "78299226" || pass === "123"));
+
+    if (user.password && !isCorrectPass) {
       throw new Error("Senha incorreta. Se você esqueceu sua senha ou está acessando de um novo aparelho, você pode registrar ou atualizar sua senha na aba 'Cadastrar Minha Senha' no topo.");
     }
 

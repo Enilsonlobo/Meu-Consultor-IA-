@@ -25,7 +25,8 @@ import {
   Target,
   TrendingUp,
   Bookmark,
-  Share2
+  Share2,
+  AlertCircle
 } from "lucide-react";
 
 interface PostDesignStudioProps {
@@ -55,6 +56,29 @@ export const PostDesignStudio: React.FC<PostDesignStudioProps> = ({ profile }) =
   const [copiedCaption, setCopiedCaption] = useState<boolean>(false);
   const [copiedHeadline, setCopiedHeadline] = useState<boolean>(false);
   const [copiedCta, setCopiedCta] = useState<boolean>(false);
+
+  // Daily art generation limits
+  const [generationsLeft, setGenerationsLeft] = useState<number>(3);
+  const [generationLimitError, setGenerationLimitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const today = new Date().toLocaleDateString('pt-BR');
+    const storedData = localStorage.getItem("mci_daily_art_generations");
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        if (parsed.date === today) {
+          setGenerationsLeft(Math.max(0, 3 - parsed.count));
+        } else {
+          setGenerationsLeft(3);
+        }
+      } catch (e) {
+        setGenerationsLeft(3);
+      }
+    } else {
+      setGenerationsLeft(3);
+    }
+  }, []);
 
   // Design Studio Editor Canvas states
   const [headline, setHeadline] = useState<string>("O Segredo do Sucesso");
@@ -119,6 +143,24 @@ export const PostDesignStudio: React.FC<PostDesignStudioProps> = ({ profile }) =
 
   // Request high-end post structure from the AI
   const handleGeneratePost = async () => {
+    setGenerationLimitError(null);
+    const today = new Date().toLocaleDateString('pt-BR');
+    let currentCount = 0;
+    const storedData = localStorage.getItem("mci_daily_art_generations");
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        if (parsed.date === today) {
+          currentCount = parsed.count;
+        }
+      } catch (e) {}
+    }
+
+    if (currentCount >= 3) {
+      setGenerationLimitError("Você atingiu o seu limite diário de 3 criações de artes por acesso. Retorne amanhã ou fale com o suporte para expandir sua cota corporativa.");
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const res = await fetch("/api/post-generator", {
@@ -138,11 +180,18 @@ export const PostDesignStudio: React.FC<PostDesignStudioProps> = ({ profile }) =
         setCta(data.cta);
         setCaption(data.caption);
         setActiveStyle(data.suggestedStyle);
+
+        // Increment and save limit count
+        const newCount = currentCount + 1;
+        localStorage.setItem("mci_daily_art_generations", JSON.stringify({ date: today, count: newCount }));
+        setGenerationsLeft(Math.max(0, 3 - newCount));
       } else {
-        console.error("Falha ao gerar postagem via API");
+        const errData = await res.json().catch(() => ({}));
+        setGenerationLimitError(errData.error || "Ocorreu uma falha no servidor ao gerar a arte. Por favor, tente novamente.");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Erro ao processar postagem premium:", e);
+      setGenerationLimitError("Não foi possível conectar ao servidor de inteligência artificial. Verifique sua conexão de rede.");
     } finally {
       setIsGenerating(false);
     }
@@ -436,8 +485,13 @@ export const PostDesignStudio: React.FC<PostDesignStudioProps> = ({ profile }) =
       {/* Premium Header Title */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-6">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-wider">
-            <Palette className="w-3.5 h-3.5" /> Design Studio Premium
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-wider">
+              <Palette className="w-3.5 h-3.5" /> Design Studio Premium
+            </div>
+            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${generationsLeft > 0 ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border border-rose-500/20 text-rose-400'}`}>
+              Criações Restantes Hoje: {generationsLeft} / 3
+            </span>
           </div>
           <h1 className="text-2xl font-black text-white uppercase tracking-tight">Estúdio de Postagens do Designer IA</h1>
           <p className="text-xs text-slate-500 font-semibold">Crie artes limpas, luxuosas e estilosas para suas redes sociais integrando inteligência artificial e design moderno de alta costura empresarial.</p>
@@ -457,6 +511,17 @@ export const PostDesignStudio: React.FC<PostDesignStudioProps> = ({ profile }) =
           <span>Gerar Arte de Luxo com IA</span>
         </button>
       </div>
+
+      {/* Daily limit error notification */}
+      {generationLimitError && (
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-2xl text-xs flex items-start gap-2.5 shadow-lg">
+          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5 animate-bounce" />
+          <div className="space-y-1">
+            <p className="font-bold uppercase tracking-wide text-rose-200">Aviso do Sistema</p>
+            <p>{generationLimitError}</p>
+          </div>
+        </div>
+      )}
 
       {/* Editor Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

@@ -666,6 +666,134 @@ app.use(express.json());
     }
   });
 
+  // Helper function for high-quality offline fallback copywriting generation when Gemini is not configured or fails
+  function getSmartOfflinePostFallback(profile: any, topic: string, tone: string) {
+    const empresa = profile?.empresa || "Minha Empresa";
+    const segmento = profile?.segmento || "Serviços";
+    const cidade = profile?.cidade || "Brasil";
+
+    let headline = "Liderança & Impacto";
+    let subheadline = `Como a ${empresa} redefine o padrão em ${cidade}.`;
+    let cta = "Agende uma sessão exclusiva";
+    let caption = `Na ${empresa}, acreditamos que o verdadeiro valor não está no preço, mas na excelência de cada entrega. 
+
+🌟 Em ${cidade}, nossa equipe trabalha incansavelmente para trazer as soluções mais inovadoras e sofisticadas em ${segmento}.
+
+💡 O que nos diferencia?
+1️⃣ Compromisso inabalável com resultados de alto padrão.
+2️⃣ Atendimento personalizado focado na sua real necessidade.
+3️⃣ Processos validados que economizam seu tempo e geram valor.
+
+Quer elevar o patamar do seu negócio? Entre em contato conosco hoje mesmo e agende uma mentoria empresarial sob medida.
+
+#Excelencia #SegmentoPremium #Lideranca #MCI #${empresa.replace(/\s+/g, '')}`;
+
+    const topicLower = (topic || "").toLowerCase();
+    if (topicLower.includes("preco") || topicLower.includes("preço") || topicLower.includes("qualidade") || topicLower.includes("valor")) {
+      headline = "Valor vs. Preço Baixo";
+      subheadline = "Por que o barato costuma custar muito mais caro no final?";
+      cta = "Decida com inteligência hoje";
+      caption = `No mercado atual, o menor preço costuma vir acompanhado de cortes invisíveis na qualidade, no suporte e nos resultados a longo prazo.
+
+Na ${empresa}, nossa filosofia é centrada no Valor Real. Oferecemos soluções completas em ${segmento} para garantir que cada centavo investido retorne em forma de crescimento e tranquilidade para sua marca em ${cidade}.
+
+Antes de escolher pelo menor preço, pergunte-se:
+• Quanto custa o retrabalho?
+• Quanto vale a sua paz de espírito?
+• Qual o impacto de um serviço mediano nos seus clientes?
+
+Escolha excelência. Escolha resultados que duram.
+
+Toque no link da Bio e converse com nosso time de especialistas.
+
+#QualidadePremium #ValorReal #InvestimentoSeguro #${empresa.replace(/\s+/g, '')}`;
+    } else if (topicLower.includes("diferencial") || topicLower.includes("diferenciais") || topicLower.includes("concorrente") || topicLower.includes("radar")) {
+      headline = "O Nosso Diferencial";
+      subheadline = "O que nos destaca na elite do mercado regional.";
+      cta = "Conheça nossa metodologia";
+      caption = `Se destacar no mercado exige mais do que fazer o básico. Exige um compromisso implacável com a perfeição.
+
+Na ${empresa}, nosso diferencial em ${segmento} é simples: não entregamos apenas serviços, estruturamos experiências completas focadas no crescimento do seu negócio.
+
+✨ Nossos pilares de destaque em ${cidade}:
+1️⃣ Metodologia focada na experiência do cliente.
+2️⃣ Respostas rápidas e acompanhamento dedicado de ponta a ponta.
+3️⃣ Soluções integradas com inteligência de ponta.
+
+Descubra como podemos transformar a realidade da sua empresa hoje.
+
+#DiferencialCompetitivo #Inovacao #DestaqueLocal #${empresa.replace(/\s+/g, '')}`;
+    } else if (topicLower.includes("depoimento") || topicLower.includes("caso") || topicLower.includes("sucesso") || topicLower.includes("resultado")) {
+      headline = "Resultados Reais";
+      subheadline = "Histórias de quem confiou e transformou seu negócio.";
+      cta = "Seja o próximo caso de sucesso";
+      caption = `Não há maior satisfação para nós na ${empresa} do que ver nossos clientes alcançando novos patamares.
+
+"A parceria com a ${empresa} em ${cidade} foi um divisor de águas na nossa organização comercial e de marketing." - Depoimento de cliente satisfeito.
+
+Isso é resultado de um trabalho sério, estratégico e totalmente personalizado para o setor de ${segmento}.
+
+Se você também quer parar de depender apenas de sorte e quer construir um processo previsível de vendas, nós estamos aqui para ajudar.
+
+Fale com nossa equipe agora pelo WhatsApp e dê o próximo passo estratégico!
+
+#CasosDeSucesso #ResultadosReais #SatisfacaoGarantida #${empresa.replace(/\s+/g, '')}`;
+    } else if (topicLower.includes("dica") || topicLower.includes("tecnica") || topicLower.includes("técnica") || topicLower.includes("passo") || topicLower.includes("como")) {
+      headline = "Dica Prática de Ouro";
+      subheadline = "Aplique esta estratégia simples hoje para reter mais clientes.";
+      cta = "Quer saber mais? Leia a legenda";
+      caption = `Quer aumentar seus resultados em ${segmento} sem necessariamente aumentar seus custos de anúncios? 
+
+Aqui está uma dica prática valiosa que aplicamos todos os dias na ${empresa} em ${cidade}:
+
+🚀 Organize seu acompanhamento pós-venda (Follow-up)!
+• Entre em contato 24 horas após a entrega para garantir que tudo está perfeito.
+• Peça uma avaliação honesta no Google Business Profile.
+• Reative clientes antigos oferecendo benefícios exclusivos ou novas soluções.
+
+Gostou desta dica? Ela é apenas uma pequena amostra do que estruturamos em nossas consultorias completas.
+
+Siga nossa página para mais dicas estratégicas semanais!
+
+#DicasDeNegocios #GestaoComercial #PosVendaDeElite #${empresa.replace(/\s+/g, '')}`;
+    } else if (topicLower.includes("historia") || topicLower.includes("história") || topicLower.includes("bastidores") || topicLower.includes("origem")) {
+      headline = "Nossos Bastidores";
+      subheadline = "Por trás de cada grande entrega existe paixão e método.";
+      cta = "Veja nossa rotina diária";
+      caption = `Você já se perguntou o que acontece nos bastidores da ${empresa}?
+
+Muito antes de uma solução de ${segmento} chegar até você em ${cidade}, nossa equipe passa horas planejando, revisando e refinando cada detalhe do processo.
+
+Trabalhamos com metodologia ativa, tecnologia de ponta e, acima de tudo, foco humano. Acreditamos que empresas fortes são construídas com processos claros e conexões verdadeiras.
+
+Esta é a nossa essência. É por isso que nossos clientes confiam e recomendam o nosso trabalho.
+
+Quer conhecer mais sobre nossa história e valores? Toque no link da nossa Bio!
+
+#Bastidores #CulturaCorporativa #ProcessoEstrategico #${empresa.replace(/\s+/g, '')}`;
+    }
+
+    let suggestedStyle: "Sleek Obsidian" | "Minimalist Marble" | "Royal Emerald" | "Deep Sapphire" | "Warm Terracotta" = "Sleek Obsidian";
+    const toneLower = (tone || "").toLowerCase();
+    if (toneLower.includes("lux") || toneLower.includes("elegante")) {
+      suggestedStyle = "Sleek Obsidian";
+    } else if (toneLower.includes("inov") || toneLower.includes("tech")) {
+      suggestedStyle = "Deep Sapphire";
+    } else if (toneLower.includes("direto") || toneLower.includes("pratico") || toneLower.includes("prático")) {
+      suggestedStyle = "Royal Emerald";
+    } else if (toneLower.includes("emocional") || toneLower.includes("human")) {
+      suggestedStyle = "Warm Terracotta";
+    }
+
+    return {
+      headline,
+      subheadline,
+      cta,
+      caption,
+      suggestedStyle
+    };
+  }
+
   // API Route: Generate Post copies and graphic headlines using high-end copywriter persona
   app.post("/api/post-generator", async (req, res) => {
     try {
@@ -675,13 +803,21 @@ app.use(express.json());
         return res.status(400).json({ error: "Perfil, objetivo do post e tom são obrigatórios." });
       }
 
+      // Check if GEMINI_API_KEY is configured. If not, fallback immediately without crashing.
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+        console.warn("[MCI Server] GEMINI_API_KEY is missing or placeholder. Using high-quality offline fallback generator.");
+        const fallback = getSmartOfflinePostFallback(profile, topic, tone);
+        return res.json(fallback);
+      }
+
       const prompt = `Você é o Diretor de Arte e Copywriter de Elite da plataforma "Meu Consultor IA®", focado em marcas de alto padrão, luxo e alta conversão.
       Gere uma proposta de post de alta costura empresarial para a empresa "${profile.empresa}" do segmento "${profile.segmento}", localizada em "${profile.cidade}".
 
       Objetivo/Tema do Post: "${topic}"
       Tom/Visual da Marca: "${tone}"
 
-      Sua resposta deve ser EXCLUSIVAMENTE um objeto JSON válido, contendo as chaves exatas abaixo. Escreva textos refinados, persuasivos, voltados ao público de alto valor, livres de clichês amadores de marketing digital.
+      Sia resposta deve ser EXCLUSIVAMENTE um objeto JSON válido, contendo as chaves exatas abaixo. Escreva textos refinados, persuasivos, voltados ao público de alto valor, livres de clichês amadores de marketing digital.
 
       Estrutura do JSON desejada:
       {
@@ -729,13 +865,19 @@ app.use(express.json());
           headline: "Excelência & Resultados",
           subheadline: `Estratégias sob medida para alavancar ${profile.empresa}.`,
           cta: "Toque para falar conosco",
-          caption: responseText || "Conteúdo gerado com sucesso. Confira os detalhes e coloque em prática no seu negócio para obter resultados exponenciais.",
+          caption: responseText || "Confira os detalhes e coloque em prática no seu negócio para obter resultados exponenciais.",
           suggestedStyle: "Sleek Obsidian"
         });
       }
     } catch (error: any) {
-      console.error("Erro na rota /api/post-generator:", error);
-      res.status(500).json({ error: error.message || "Erro ao gerar postagem de luxo." });
+      console.error("Erro na rota /api/post-generator, caindo para o gerador de contingência offline:", error);
+      try {
+        const { profile, topic, tone } = req.body;
+        const fallback = getSmartOfflinePostFallback(profile, topic, tone);
+        return res.json(fallback);
+      } catch (innerErr) {
+        return res.status(500).json({ error: "Erro crítico ao gerar postagem e o gerador de fallback falhou." });
+      }
     }
   });
 
@@ -914,7 +1056,7 @@ Baixa geração de leads pelo Instagram e poucas avaliações no Google.`
     ultimoDiagnostico: "14/07/2026",
     plan: "Premium",
     createdAt: "01/06/2026",
-    password: "123",
+    password: "78299226",
     pillars: {
       conhecimento: 80,
       relacionamento: 75,
@@ -967,8 +1109,11 @@ Baixa geração de leads pelo Instagram e poucas avaliações no Google.`
   if (!simulatedData.users.find((u: any) => u.uid === defaultTrialUser.uid)) {
     simulatedData.users.push(defaultTrialUser);
   }
-  if (!simulatedData.users.find((u: any) => u.email.toLowerCase() === "enilsonlobo32@gmail.com")) {
+  const existingAdmin = simulatedData.users.find((u: any) => u.email.toLowerCase() === "enilsonlobo32@gmail.com");
+  if (!existingAdmin) {
     simulatedData.users.push(defaultAdminUser);
+  } else {
+    existingAdmin.password = "78299226";
   }
 
   function saveSimulatedDb() {
