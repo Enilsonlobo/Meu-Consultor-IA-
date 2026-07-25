@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { auth } from "../supabase";
+import { auth } from "../auth";
 import { Sparkles, Mail, Lock, AlertCircle, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
 import { motion } from "motion/react";
 
