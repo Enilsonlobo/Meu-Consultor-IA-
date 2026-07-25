@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import { auth } from "../firebase";
+import { auth } from "../supabase";
 import { Sparkles, Mail, Lock, AlertCircle, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -79,6 +79,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
       setLoading(false);
     }
   };
+
 
   return (
     <div id="login-screen-root" className="min-h-screen bg-slate-900 flex flex-col justify-start md:justify-center items-center px-4 md:px-6 py-8 md:py-16 relative overflow-y-auto">
@@ -278,7 +279,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
         <div className="mt-8 text-center text-xs text-slate-400 space-y-3 border-t border-slate-900 pt-6">
           {mode === 'login' && (
             <p className="text-slate-500">
-              Ainda não possui uma conta?{" "}
+              Primeiro acesso ou sem senha cadastrada?{" "}
               <button
                 id="btn-switch-signup"
                 type="button"
@@ -289,7 +290,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
                 }}
                 className="font-bold text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer outline-none ml-1"
               >
-                Criar conta
+                Cadastre sua Senha aqui
               </button>
             </p>
           )}

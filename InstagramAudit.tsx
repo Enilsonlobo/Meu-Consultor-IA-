@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import Markdown from "react-markdown";
-import { db } from "../firebase";
+import { db } from "../supabase";
 import { InstagramAuditSession, UserProfile } from "../types";
 
 interface InstagramAuditProps {

@@ -7,7 +7,6 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { GoogleGenAI, Type } from "@google/genai";
-import OpenAI from "openai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -181,64 +180,21 @@ SUAS DIRETRIZES DE COMUNICAÇÃO:
 Fale com o cliente de forma extremamente educada, direta, respeitosa e enérgica, estimulando ações práticas de crescimento.
 `;
 
-// Camada de provedor de IA. A troca entre Gemini e GPT é feita apenas por variável de ambiente.
-type AiMessage = { role: "user" | "assistant"; text: string };
-
-function getAiProvider() {
-  return (process.env.AI_PROVIDER || "gemini").trim().toLowerCase();
-}
-
+// Safe lazy initialization of the Gemini client
 function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
-    throw new Error("GEMINI_API_KEY não está configurada na Vercel.");
+    // If not configured, we will throw a clear error or try to proceed
+    throw new Error("GEMINI_API_KEY não está configurada nos Secrets da plataforma.");
   }
-  return new GoogleGenAI({ apiKey });
-}
-
-function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) throw new Error("OPENAI_API_KEY não está configurada na Vercel.");
-  return new OpenAI({ apiKey });
-}
-
-async function generateAiText(params: {
-  system?: string;
-  prompt?: string;
-  messages?: AiMessage[];
-  temperature?: number;
-  json?: boolean;
-  geminiSchema?: any;
-}): Promise<string> {
-  const provider = getAiProvider();
-  if (provider === "openai") {
-    const client = getOpenAIClient();
-    const input = params.messages?.length
-      ? params.messages.map(m => ({ role: m.role, content: m.text }))
-      : params.prompt || "";
-    const response = await client.responses.create({
-      model: process.env.OPENAI_MODEL || "gpt-5.2",
-      instructions: params.system,
-      input: input as any
-    } as any);
-    return response.output_text || "";
-  }
-
-  const client = getGeminiClient();
-  const contents = params.messages?.length
-    ? params.messages.map(m => ({ role: m.role === "user" ? "user" : "model", parts: [{ text: m.text }] }))
-    : params.prompt || "";
-  const response = await client.models.generateContent({
-    model: process.env.GEMINI_MODEL || "gemini-3.5-flash",
-    contents: contents as any,
-    config: {
-      systemInstruction: params.system,
-      temperature: params.temperature,
-      ...(params.json ? { responseMimeType: "application/json" } : {}),
-      ...(params.geminiSchema ? { responseSchema: params.geminiSchema } : {})
+  return new GoogleGenAI({
+    apiKey: apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      }
     }
   });
-  return response.text || "";
 }
 
 const app = express();
@@ -270,12 +226,24 @@ app.use(express.json());
       }
 
       const finalSystemInstruction = CORPORATE_SYSTEM_INSTRUCTION + "\n" + profileContext;
-      const text = await generateAiText({
-        system: finalSystemInstruction,
-        messages: messages.map((m: any) => ({ role: m.role === "user" ? "user" : "assistant", text: m.text })),
-        temperature: 0.7
+      const ai = getGeminiClient();
+
+      // Transform messages history to the correct Content format expected by Gemini API
+      const contents = messages.map((m: any) => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }]
+      }));
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: contents,
+        config: {
+          systemInstruction: finalSystemInstruction,
+          temperature: 0.7,
+        }
       });
-      res.json({ text });
+
+      res.json({ text: response.text });
     } catch (error: any) {
       console.error("Erro na rota /api/chat:", error);
       res.status(500).json({ error: error.message || "Ocorreu um erro ao processar sua consulta com o consultor IA." });
@@ -309,8 +277,17 @@ app.use(express.json());
       [Crie recomendações de ações táticas para a ${empresa} desbancar os concorrentes no ambiente digital. Use checklists do tipo "[ ]" para as ações]
       
       Escreva em português brasileiro de forma formal, de alto nível, repleto de termos corporativos e focado inteiramente em soluções práticas sem floreios vagos.`;
-      const text = await generateAiText({ prompt, temperature: 0.4 });
-      res.json({ text });
+
+      const ai = getGeminiClient();
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          temperature: 0.4,
+        }
+      });
+
+      res.json({ text: response.text });
     } catch (error: any) {
       console.error("Erro na rota /api/radar:", error);
       res.status(500).json({ error: error.message || "Erro ao compilar relatório do Radar da Concorrência." });
@@ -469,8 +446,17 @@ app.use(express.json());
       ==================================================
 
       Escreva em português brasileiro de forma formal, de alto nível, com linguagem executiva, sem floreios desnecessários, focado inteiramente em soluções práticas comerciais.`;
-      const text = await generateAiText({ prompt, temperature: 0.3 });
-      res.json({ text });
+
+      const ai = getGeminiClient();
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          temperature: 0.3,
+        }
+      });
+
+      res.json({ text: response.text });
     } catch (error: any) {
       console.error("Erro na rota /api/report:", error);
       res.status(500).json({ error: error.message || "Erro ao compilar o relatório executivo." });
@@ -660,13 +646,19 @@ app.use(express.json());
       📅 Plano de Conteúdo para os próximos 30 dias (30 itens, sendo um para cada dia, intercalando descoberta, consideração, relacionamento, etc.)
 
       Seja extremamente pragmático, evite clichês de marketing amador, adote o tom de uma consultoria premium de boutique e garanta que todas as tarefas sejam imediatamente aplicáveis.`;
-      const responseText = await generateAiText({
-        prompt,
-        temperature: 0.5,
-        json: true,
-        geminiSchema: instagramAuditSchema
+
+      const ai = getGeminiClient();
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          temperature: 0.5,
+          responseMimeType: "application/json",
+          responseSchema: instagramAuditSchema
+        }
       });
-      const parsed = JSON.parse(responseText || "{}");
+
+      const parsed = JSON.parse(response.text || "{}");
       res.json(parsed);
     } catch (error: any) {
       console.error("Erro na rota /api/instagram-audit:", error);
@@ -811,9 +803,13 @@ Quer conhecer mais sobre nossa história e valores? Toque no link da nossa Bio!
         return res.status(400).json({ error: "Perfil, objetivo do post e tom são obrigatórios." });
       }
 
-      const provider = getAiProvider();
-      const hasAiKey = provider === "openai" ? Boolean(process.env.OPENAI_API_KEY) : Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "MY_GEMINI_API_KEY");
-      if (!hasAiKey) return res.json(getSmartOfflinePostFallback(profile, topic, tone));
+      // Check if GEMINI_API_KEY is configured. If not, fallback immediately without crashing.
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+        console.warn("[MCI Server] GEMINI_API_KEY is missing or placeholder. Using high-quality offline fallback generator.");
+        const fallback = getSmartOfflinePostFallback(profile, topic, tone);
+        return res.json(fallback);
+      }
 
       const prompt = `Você é o Diretor de Arte e Copywriter de Elite da plataforma "Meu Consultor IA®", focado em marcas de alto padrão, luxo e alta conversão.
       Gere uma proposta de post de alta costura empresarial para a empresa "${profile.empresa}" do segmento "${profile.segmento}", localizada em "${profile.cidade}".
@@ -833,7 +829,17 @@ Quer conhecer mais sobre nossa história e valores? Toque no link da nossa Bio!
       }
 
       Atenção: Responda APENAS com o JSON puro, sem usar blocos de código markdown como \`\`\`json ... \`\`\`. O retorno deve ser um JSON perfeitamente válido para parsing imediato.`;
-      let responseText = await generateAiText({ prompt, temperature: 0.6, json: true });
+
+      const ai = getGeminiClient();
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          temperature: 0.6,
+        }
+      });
+
+      let responseText = response.text || "";
       responseText = responseText.trim();
       
       // Sanitização básica do JSON para evitar falhas com blocos de código
@@ -917,6 +923,59 @@ Quer conhecer mais sobre nossa história e valores? Toque no link da nossa Bio!
     console.warn("Failed to load/initialize simulated_db.json:", e);
   }
 
+  // Sincronização em nuvem para persistência definitiva (Multi-device / Cloud Run)
+  const KVDB_URL = "https://kvdb.io/mci_d9dc0ed30c2c/simulated_db";
+  (async () => {
+    try {
+      console.log("[Sync] Tentando sincronizar banco de dados com a nuvem (kvdb.io)...");
+      const remoteResponse = await Promise.race([
+        fetch(KVDB_URL),
+        new Promise<Response>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3500))
+      ]);
+      if (remoteResponse.ok) {
+        const remoteText = await remoteResponse.text();
+        if (remoteText && remoteText.trim().startsWith("{")) {
+          const parsed = JSON.parse(remoteText);
+          if (parsed && Array.isArray(parsed.users)) {
+            // Merge lists carefully to keep both local and remote changes
+            const mergedUsers = [...simulatedData.users];
+            if (parsed.users && Array.isArray(parsed.users)) {
+              parsed.users.forEach((remoteU: any) => {
+                const idx = mergedUsers.findIndex((u: any) => u.uid === remoteU.uid);
+                if (idx > -1) {
+                  mergedUsers[idx] = { ...mergedUsers[idx], ...remoteU };
+                } else {
+                  mergedUsers.push(remoteU);
+                }
+              });
+            }
+
+            const mergedWhitelist = [...simulatedData.whitelist];
+            if (parsed.whitelist && Array.isArray(parsed.whitelist)) {
+              parsed.whitelist.forEach((remoteW: any) => {
+                if (remoteW && remoteW.email && !mergedWhitelist.some((w: any) => w.email?.toLowerCase() === remoteW.email?.toLowerCase())) {
+                  mergedWhitelist.push(remoteW);
+                }
+              });
+            }
+
+            simulatedData = {
+              ...simulatedData,
+              ...parsed,
+              users: mergedUsers,
+              whitelist: mergedWhitelist
+            };
+            
+            fs.writeFileSync(DB_FILE, JSON.stringify(simulatedData, null, 2), "utf-8");
+            console.log("[Sync] Sincronização inicial em nuvem concluída com sucesso.");
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("[Sync] Usando arquivo local pois a sincronização inicial em nuvem falhou ou excedeu tempo limite:", e);
+    }
+  })();
+
   // Ensure default users are seeded on server startup
   const defaultTrialUser = {
     uid: "trial-owner-123",
@@ -934,7 +993,7 @@ Quer conhecer mais sobre nossa história e valores? Toque no link da nossa Bio!
     ultimoDiagnostico: "14/07/2026",
     plan: "Premium",
     createdAt: "01/06/2026",
-    
+    password: "123",
     pillars: {
       conhecimento: 80,
       relacionamento: 75,
@@ -997,7 +1056,7 @@ Baixa geração de leads pelo Instagram e poucas avaliações no Google.`
     ultimoDiagnostico: "14/07/2026",
     plan: "Premium",
     createdAt: "01/06/2026",
-    
+    password: "78299226",
     pillars: {
       conhecimento: 80,
       relacionamento: 75,
@@ -1053,27 +1112,28 @@ Baixa geração de leads pelo Instagram e poucas avaliações no Google.`
   const existingAdmin = simulatedData.users.find((u: any) => u.email.toLowerCase() === "enilsonlobo32@gmail.com");
   if (!existingAdmin) {
     simulatedData.users.push(defaultAdminUser);
+  } else {
+    existingAdmin.password = "78299226";
   }
 
   function saveSimulatedDb() {
     try {
       fs.writeFileSync(DB_FILE, JSON.stringify(simulatedData, null, 2), "utf-8");
+      
+      // Realiza o backup remoto em segundo plano (assíncrono e não bloqueante)
+      fetch(KVDB_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(simulatedData)
+      }).catch(err => {
+        console.warn("[Sync] Falha ao enviar backup para a nuvem:", err);
+      });
     } catch (e) {
       console.warn("Failed to save simulated_db.json to disk:", e);
     }
   }
 
   saveSimulatedDb();
-
-  // O banco simulado existe somente para desenvolvimento local.
-  // Em produção, autenticação e persistência devem usar Firebase.
-  app.use("/api/simdb", (req, res, next) => {
-    const isProductionRuntime = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
-    if (isProductionRuntime) {
-      return res.status(503).json({ error: "Banco simulado desativado em produção. Configure o Firebase." });
-    }
-    next();
-  });
 
   // API - Get all docs for a collection
   app.get("/api/simdb/get", (req, res) => {

@@ -1,32 +1,20 @@
-# Meu Consultor IA®
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
 
-Aplicação React/Vite com backend Express, autenticação Firebase e camada de IA intercambiável entre Gemini e OpenAI/GPT.
+# Run and deploy your AI Studio app
 
-## Instalação local
+This contains everything you need to run your app locally.
 
-```bash
-npm install
-cp .env.example .env.local
-npm run dev
-```
+View your app in AI Studio: https://ai.studio/apps/d9dc0ed3-0c2c-4015-8363-c6f51a0a5b00
 
-## Variáveis na Vercel
+## Run Locally
 
-Cadastre todas as variáveis `VITE_FIREBASE_*`. Para IA, escolha:
+**Prerequisites:**  Node.js
 
-- Gemini: `AI_PROVIDER=gemini`, `GEMINI_API_KEY` e opcionalmente `GEMINI_MODEL`.
-- GPT: `AI_PROVIDER=openai`, `OPENAI_API_KEY` e opcionalmente `OPENAI_MODEL`.
 
-Nunca grave chaves, senhas ou tokens no GitHub. Após alterar variáveis na Vercel, faça um novo deploy.
-
-## Firebase
-
-Ative **Authentication > Email/Password** e adicione o domínio da Vercel em **Authentication > Settings > Authorized domains**. O Firestore deve possuir regras que permitam a cada usuário acessar apenas seus próprios dados.
-
-## Comandos
-
-```bash
-npm run lint
-npm run build
-npm start
-```
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

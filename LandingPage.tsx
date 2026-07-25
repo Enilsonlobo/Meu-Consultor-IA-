@@ -234,7 +234,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onLogin }) =>
           <p>© {new Date().getFullYear()} Meu Consultor IA®. Todos os direitos reservados.</p>
           <p className="flex items-center gap-1.5">
             <Shield className="w-4 h-4 text-indigo-500" />
-            <span>Segurança garantida via Firebase Authentication</span>
+            <span>Segurança garantida via Supabase Authentication</span>
           </p>
         </div>
       </footer>

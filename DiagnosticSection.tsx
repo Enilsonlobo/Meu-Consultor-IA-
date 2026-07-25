@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from "react";
 import { DIAG_QUESTIONS, DiagnosticQuestion } from "../data";
 import { CrescerPillars } from "../types";
-import { db } from "../firebase";
+import { db } from "../supabase";
 import { Target, CheckCircle2, AlertCircle, Save, ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 
 interface DiagnosticSectionProps {

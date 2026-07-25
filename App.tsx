@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { UserProfile, ChatSession, Message, CrescerPillars, DiagnosticSession } from "./types";
-import { auth, db } from "./firebase";
+import { auth, db } from "./supabase";
 import { LandingPage } from "./components/LandingPage";
 import { LoginScreen } from "./components/LoginScreen";
 import { Sidebar, SidebarTab } from "./components/Sidebar";

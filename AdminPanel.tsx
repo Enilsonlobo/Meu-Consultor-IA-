@@ -20,7 +20,7 @@ import {
   CheckCircle,
   Key
 } from "lucide-react";
-import { db } from "../firebase";
+import { db } from "../supabase";
 
 interface AdminUserRow {
   id: string;
