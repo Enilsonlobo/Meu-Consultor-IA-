@@ -1,26 +1,20 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from "react";
-import { auth } from "../firebase";
+import { auth } from "../supabase";
 import { Sparkles, Mail, Lock, AlertCircle, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
 import { motion } from "motion/react";
 
 interface LoginScreenProps {
   onSuccess: () => void;
   onBackToLanding: () => void;
-  initialMode?: 'login' | 'signup' | 'forgot';
+  initialMode?: "login" | "signup" | "forgot";
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLanding, initialMode = 'login' }) => {
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>(initialMode);
-
-  React.useEffect(() => {
-    setMode(initialMode);
-  }, [initialMode]);
-
+export const LoginScreen: React.FC<LoginScreenProps> = ({
+  onSuccess,
+  onBackToLanding,
+  initialMode = "login",
+}) => {
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,404 +23,167 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess, onBackToLan
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleAction = async (e: React.FormEvent) => {
-    e.preventDefault();
+  React.useEffect(() => setMode(initialMode), [initialMode]);
+
+  const changeMode = (next: "login" | "signup" | "forgot") => {
+    setError(null);
+    setMessage(null);
+    setMode(next);
+  };
+
+  const handleAction = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
     setMessage(null);
 
     const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return setError("Preencha o seu e-mail.");
+    if (mode !== "forgot" && !password) return setError("Digite a sua senha.");
 
-    if (!cleanEmail) {
-      setError("Por favor, preencha o campo de e-mail.");
-      return;
-    }
-
-    if (mode !== 'forgot' && !password) {
-      setError("Por favor, insira sua senha.");
-      return;
+    if (mode === "signup") {
+      if (password.length < 6) return setError("A senha deve ter pelo menos 6 caracteres.");
+      if (password !== confirmPassword) return setError("As senhas não coincidem.");
     }
 
     setLoading(true);
-
     try {
-      if (mode === 'login') {
+      if (mode === "login") {
         await auth.signInWithEmailAndPassword(cleanEmail, password);
         onSuccess();
-      } else if (mode === 'signup') {
-        if (password !== confirmPassword) {
-          setError("As senhas inseridas não coincidem.");
-          setLoading(false);
-          return;
-        }
-        if (password.length < 6) {
-          setError("Sua senha deve conter pelo menos 6 caracteres.");
-          setLoading(false);
-          return;
-        }
-        await auth.createUserWithEmailAndPassword(cleanEmail, password);
-        setMessage("Conta criada com sucesso!");
-        setTimeout(() => {
-          onSuccess();
-        }, 1000);
-      } else if (mode === 'forgot') {
-        await auth.sendPasswordResetEmail(cleanEmail);
-        setMessage("Se as credenciais corresponderem a uma conta ativa, você receberá um link para redefinir sua senha.");
-      }
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Erro inesperado ao autenticar. Tente novamente.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setError(null);
-    let targetEmail = email.trim().toLowerCase();
-
-    if (!targetEmail) {
-      const promptEmail = window.prompt(
-        "Insira seu e-mail do Google para efetuar o login corporativo premium:",
-        "seu-email@gmail.com"
-      );
-      if (promptEmail === null) {
-        // User cancelled
         return;
       }
-      if (promptEmail.trim()) {
-        targetEmail = promptEmail.trim().toLowerCase();
-        setEmail(targetEmail);
-      } else {
-        targetEmail = "empresa@consultoria.com.br";
+
+      if (mode === "signup") {
+        const result = await auth.createUserWithEmailAndPassword(cleanEmail, password);
+        if (result.session) {
+          setMessage("Conta criada. Acesso liberado com sucesso.");
+          onSuccess();
+        } else {
+          setMessage("Conta criada. Confira seu e-mail para confirmar o cadastro e depois faça o login.");
+          setPassword("");
+          setConfirmPassword("");
+          setMode("login");
+        }
+        return;
       }
-    }
 
-    setLoading(true);
-    try {
-      // Direct sign in with our safe auth wrapper (will register the email on the fly as premium if new)
-      await auth.signInWithEmailAndPassword(targetEmail, "123");
-      setMessage("Conectado com sucesso via Google!");
-      setTimeout(() => {
-        onSuccess();
-      }, 1000);
+      await auth.sendPasswordResetEmail(cleanEmail);
+      setMessage("Enviamos as instruções de recuperação. Confira também a caixa de spam.");
     } catch (err: any) {
       console.error(err);
-      setError("Não foi possível conectar. Usando conta demonstrativa.");
-      setTimeout(() => {
-        onSuccess();
-      }, 1500);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickAccess = async (targetEmail: string, targetPass: string) => {
-    setError(null);
-    setMessage(null);
-    setLoading(true);
-    setEmail(targetEmail);
-    setPassword(targetPass);
-    try {
-      await auth.signInWithEmailAndPassword(targetEmail, targetPass);
-      setMessage(`Acesso rápido autorizado! Conectando como ${targetEmail === 'enilsonlobo32@gmail.com' ? 'Mestre' : 'Demo'}...`);
-      setTimeout(() => {
-        onSuccess();
-      }, 1000);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Erro ao conectar via acesso rápido.");
+      setError(err?.message || "Não foi possível concluir a operação.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div id="login-screen-root" className="min-h-screen bg-slate-900 flex flex-col justify-start md:justify-center items-center px-4 md:px-6 py-8 md:py-16 relative overflow-y-auto">
-      
-      {/* Decorative Blur Backgrounds */}
+    <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center px-4 py-10 relative overflow-hidden">
       <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Brand Launcher Logo */}
-      <div className="w-full max-w-md flex justify-start mb-6 z-20 md:absolute md:top-8 md:left-8 md:mb-0 md:w-auto">
-        <button
-          id="btn-login-back-landing"
-          onClick={onBackToLanding}
-          className="flex items-center gap-2 text-xs text-slate-400 hover:text-white font-semibold transition-colors outline-none cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Voltar para a Landing Page</span>
-        </button>
-      </div>
+      <button
+        onClick={onBackToLanding}
+        className="absolute top-6 left-6 flex items-center gap-2 text-xs text-slate-400 hover:text-white font-semibold transition-colors z-20"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Voltar
+      </button>
 
-      {/* Main Login Card Layout */}
       <motion.div
-        id="login-form-card"
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="w-full max-w-md bg-slate-950/80 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl relative z-10 backdrop-blur-md md:my-auto my-4"
+        className="w-full max-w-md bg-slate-950/80 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl relative z-10 backdrop-blur-md"
       >
-        {/* Brand Banner */}
         <div className="text-center mb-8 space-y-2">
-          <div className="inline-flex bg-indigo-600 text-white p-3 rounded-2xl shadow-lg shadow-indigo-600/15 mb-2 justify-center">
+          <div className="inline-flex bg-indigo-600 text-white p-3 rounded-2xl shadow-lg mb-2">
             <Sparkles className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight">
             Meu Consultor IA<span className="text-indigo-500">®</span>
           </h2>
           <p className="text-slate-400 text-xs">
-            {mode === 'login' && "Acesse sua conta para continuar sua consultoria empresarial."}
-            {mode === 'signup' && "Crie e registre sua senha de acesso para o seu e-mail liberado."}
-            {mode === 'forgot' && "Digite seu e-mail para recuperar seu acesso corporativo."}
+            {mode === "login" && "Entre com seu e-mail e sua senha."}
+            {mode === "signup" && "Crie sua conta para acessar a plataforma."}
+            {mode === "forgot" && "Receba por e-mail o link de recuperação."}
           </p>
         </div>
 
-        {/* Navigation Tabs for Login and Sign up */}
-        {mode !== 'forgot' && (
+        {mode !== "forgot" && (
           <div className="flex bg-slate-900 p-1 rounded-xl mb-6 border border-slate-800">
-            <button
-              id="tab-login-btn"
-              type="button"
-              onClick={() => {
-                setError(null);
-                setMessage(null);
-                setMode('login');
-              }}
-              className={`flex-1 py-2.5 text-[11px] sm:text-xs font-bold px-1 rounded-lg transition-all cursor-pointer outline-none ${
-                mode === 'login' 
-                  ? 'bg-indigo-600 text-white shadow-md' 
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Acessar Minha Conta
+            <button type="button" onClick={() => changeMode("login")} className={`flex-1 py-2.5 text-xs font-bold rounded-lg ${mode === "login" ? "bg-indigo-600 text-white" : "text-slate-400"}`}>
+              Entrar
             </button>
-            <button
-              id="tab-signup-btn"
-              type="button"
-              onClick={() => {
-                setError(null);
-                setMessage(null);
-                setMode('signup');
-              }}
-              className={`flex-1 py-2.5 text-[11px] sm:text-xs font-bold px-1 rounded-lg transition-all cursor-pointer outline-none ${
-                mode === 'signup' 
-                  ? 'bg-indigo-600 text-white shadow-md' 
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Cadastrar Minha Senha
+            <button type="button" onClick={() => changeMode("signup")} className={`flex-1 py-2.5 text-xs font-bold rounded-lg ${mode === "signup" ? "bg-indigo-600 text-white" : "text-slate-400"}`}>
+              Criar conta
             </button>
           </div>
         )}
 
-        {/* Alert Notifications */}
         {error && (
-          <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs flex items-start gap-2.5 mb-6">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-            <span>{error}</span>
+          <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs flex gap-2.5 mb-6">
+            <AlertCircle className="w-4 h-4 shrink-0" /><span>{error}</span>
           </div>
         )}
-
         {message && (
-          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-xl text-xs flex items-start gap-2.5 mb-6">
-            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-            <span>{message}</span>
+          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-xl text-xs flex gap-2.5 mb-6">
+            <CheckCircle className="w-4 h-4 shrink-0" /><span>{message}</span>
           </div>
         )}
 
-        {/* Action Form */}
-        <form id="auth-action-form" onSubmit={handleAction} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Endereço de E-mail</label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-3 text-slate-500">
-                <Mail className="w-4 h-4" />
-              </span>
-              <input
-                id="login-email-input"
-                type="email"
-                placeholder="nome@suaempresa.com.br"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl text-sm focus:outline-none placeholder-slate-600 text-slate-200"
-              />
+        <form onSubmit={handleAction} className="space-y-4">
+          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            E-mail
+            <div className="relative mt-1">
+              <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+              <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome@suaempresa.com.br" className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl text-sm focus:outline-none text-slate-200" />
             </div>
-          </div>
+          </label>
 
-          {mode !== 'forgot' && (
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Senha de Acesso</label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-3 text-slate-500">
-                  <Lock className="w-4 h-4" />
-                </span>
-                <input
-                  id="login-password-input"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Sua senha secreta"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl text-sm focus:outline-none placeholder-slate-600 text-slate-200"
-                />
+          {mode !== "forgot" && (
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Senha
+              <div className="relative mt-1">
+                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+                <input type={showPassword ? "text" : "password"} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl text-sm focus:outline-none text-slate-200" />
               </div>
-            </div>
+            </label>
           )}
 
-          {mode === 'signup' && (
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Confirmar Senha</label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-3 text-slate-500">
-                  <Lock className="w-4 h-4" />
-                </span>
-                <input
-                  id="login-confirm-password-input"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Repita sua senha secreta"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl text-sm focus:outline-none placeholder-slate-600 text-slate-200"
-                />
+          {mode === "signup" && (
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Confirmar senha
+              <div className="relative mt-1">
+                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+                <input type={showPassword ? "text" : "password"} autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl text-sm focus:outline-none text-slate-200" />
               </div>
-            </div>
+            </label>
           )}
 
-          {/* Show Password Option */}
-          {mode !== 'forgot' && (
-            <div className="flex items-center pt-1 pb-1">
-              <input
-                id="checkbox-show-password"
-                type="checkbox"
-                checked={showPassword}
-                onChange={(e) => setShowPassword(e.target.checked)}
-                className="w-4 h-4 text-indigo-600 bg-slate-900 border-slate-800 rounded focus:ring-indigo-500 focus:ring-offset-slate-900 cursor-pointer"
-              />
-              <label htmlFor="checkbox-show-password" className="ml-2 text-xs text-slate-400 hover:text-slate-300 cursor-pointer select-none">
-                Mostrar caracteres da senha
-              </label>
-            </div>
+          {mode !== "forgot" && (
+            <label className="flex items-center text-xs text-slate-400 cursor-pointer">
+              <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} className="mr-2" />
+              Mostrar senha
+            </label>
           )}
 
-          {/* Forgot link (only during login mode) */}
-          {mode === 'login' && (
+          {mode === "login" && (
             <div className="text-right">
-              <button
-                id="btn-forgot-password-trigger"
-                type="button"
-                onClick={() => setMode('forgot')}
-                className="text-xs text-slate-400 hover:text-indigo-400 transition-colors cursor-pointer outline-none"
-              >
-                Esqueceu sua senha?
-              </button>
+              <button type="button" onClick={() => changeMode("forgot")} className="text-xs text-slate-400 hover:text-indigo-400">Esqueceu sua senha?</button>
             </div>
           )}
 
-          {/* Submit Action Button */}
-          <button
-            id="btn-auth-submit"
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white font-semibold rounded-xl text-sm shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
-          >
-            <span>{loading ? "Processando..." : mode === 'login' ? "Entrar na Plataforma" : mode === 'signup' ? "Cadastrar Minha Senha & Entrar" : "Enviar Link de Recuperação"}</span>
+          <button type="submit" disabled={loading} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+            {loading ? "Processando..." : mode === "login" ? "Entrar" : mode === "signup" ? "Criar conta" : "Enviar recuperação"}
             {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
 
-        {/* Quick Access Section */}
-        {mode === 'login' && (
-          <div id="quick-access-section" className="mt-6 pt-6 border-t border-slate-900 space-y-3">
-            <div className="flex items-center gap-2 text-slate-400">
-              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Acesso Instantâneo Sem Senha</span>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-2.5">
-              <button
-                id="btn-quick-login-mestre"
-                type="button"
-                onClick={() => handleQuickAccess("enilsonlobo32@gmail.com", "78299226")}
-                disabled={loading}
-                className="w-full py-2.5 px-4 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/15 text-indigo-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer outline-none"
-              >
-                <span>Entrar como Mestre (Dono)</span>
-                <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-semibold">1-Click</span>
-              </button>
-
-              <button
-                id="btn-quick-login-demo"
-                type="button"
-                onClick={() => handleQuickAccess("empresa@consultoria.com.br", "123")}
-                disabled={loading}
-                className="w-full py-2.5 px-4 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/15 text-emerald-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer outline-none"
-              >
-                <span>Entrar como Empresa Demo</span>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold">1-Click</span>
-              </button>
-            </div>
+        {mode === "forgot" && (
+          <div className="mt-6 text-center">
+            <button type="button" onClick={() => changeMode("login")} className="text-xs font-bold text-indigo-400 hover:underline">Voltar para o login</button>
           </div>
         )}
-
-
-
-        {/* Auth mode switches */}
-        <div className="mt-8 text-center text-xs text-slate-400 space-y-3 border-t border-slate-900 pt-6">
-          {mode === 'login' && (
-            <p className="text-slate-500">
-              Primeiro acesso ou sem senha cadastrada?{" "}
-              <button
-                id="btn-switch-signup"
-                type="button"
-                onClick={() => {
-                  setError(null);
-                  setMessage(null);
-                  setMode('signup');
-                }}
-                className="font-bold text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer outline-none ml-1"
-              >
-                Cadastre sua Senha aqui
-              </button>
-            </p>
-          )}
-
-          {mode === 'signup' && (
-            <p className="text-slate-500">
-              Já possui sua senha cadastrada?{" "}
-              <button
-                id="btn-switch-login-from-signup"
-                type="button"
-                onClick={() => {
-                  setError(null);
-                  setMessage(null);
-                  setMode('login');
-                }}
-                className="font-bold text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer outline-none ml-1"
-              >
-                Acessar Minha Conta
-              </button>
-            </p>
-          )}
-
-          {mode === 'forgot' && (
-            <p className="text-slate-500">
-              Lembrou sua senha?{" "}
-              <button
-                id="btn-switch-login-from-forgot"
-                type="button"
-                onClick={() => {
-                  setError(null);
-                  setMessage(null);
-                  setMode('login');
-                }}
-                className="font-bold text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer outline-none ml-1"
-              >
-                Voltar para o Login
-              </button>
-            </p>
-          )}
-        </div>
-
       </motion.div>
     </div>
   );
