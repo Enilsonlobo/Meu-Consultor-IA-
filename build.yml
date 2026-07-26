@@ -1,0 +1,36 @@
+name: Validar projeto
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Verificar TypeScript
+        run: npm run lint
+
+      - name: Gerar build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: chave-de-teste
+          SUPABASE_URL: https://example.supabase.co
+          SUPABASE_ANON_KEY: chave-de-teste
+          OPENAI_API_KEY: sk-teste
+          OPENAI_MODEL: gpt-4.1-mini

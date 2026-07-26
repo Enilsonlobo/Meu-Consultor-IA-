@@ -1,19 +1,9 @@
 {
   "version": 2,
-  "functions": {
-    "api/index.ts": {
-      "includeFiles": "dist/**"
-    }
-  },
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/index?path=/:path*"
-    },
-    {
-      "source": "/((?!api|assets|_next/static|_next/image|favicon.ico).*)",
+      "source": "/((?!api/|assets/|favicon.ico).*)",
       "destination": "/index.html"
     }
   ]
 }
-
