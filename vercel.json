@@ -7,8 +7,13 @@
   },
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/api/index"
+      "source": "/api/:path*",
+      "destination": "/api/index?path=/:path*"
+    },
+    {
+      "source": "/((?!api|assets|_next/static|_next/image|favicon.ico).*)",
+      "destination": "/index.html"
     }
   ]
 }
+

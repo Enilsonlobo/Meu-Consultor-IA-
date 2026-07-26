@@ -78,12 +78,6 @@ export default function App() {
           (!user.displayName || user.displayName.toLowerCase().includes("enilson"))
         ) {
           updatedUser.displayName = "Mestre";
-          // Actively sanitize and sync to the cloud database
-          try {
-            db.updateDoc("users", user.uid, { displayName: "Mestre" }).catch(() => {});
-          } catch (e) {
-            console.warn("Failed to auto-update display name in Firestore:", e);
-          }
         }
         setCurrentUser(updatedUser);
         // Load real-time SaaS collections for this tenant
@@ -94,7 +88,9 @@ export default function App() {
       setIsAuthenticating(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // 2. Load Firestore / Local collections

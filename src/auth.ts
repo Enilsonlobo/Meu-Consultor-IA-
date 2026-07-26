@@ -120,10 +120,12 @@ class ReliableAuth {
     });
   }
 
-  onAuthStateChanged(callback: (user: UserProfile | null) => void) {
+  onAuthStateChanged(callback: (user: UserProfile | null) => void): (() => void) {
     this.listeners.add(callback);
     if (this.ready) callback(this.currentUser);
-    return () => this.listeners.delete(callback);
+    return () => {
+      this.listeners.delete(callback);
+    };
   }
 
   async signInWithEmailAndPassword(email: string, password: string) {

@@ -1,9 +1,8 @@
 import { createClient, Session, User } from "@supabase/supabase-js";
 import type { UserProfile } from "./types";
 
-const env = import.meta.env as Record<string, string | undefined>;
-const supabaseUrl = env.VITE_SUPABASE_URL?.trim();
-const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY?.trim();
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error("Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.");
