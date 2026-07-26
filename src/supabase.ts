@@ -1,24 +1,17 @@
 import { createClient, Session, User } from "@supabase/supabase-js";
 import type { UserProfile } from "./types";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+const supabaseUrl = "https://fldhvvwcjxwnutkjanud.supabase.co";
+const supabaseAnonKey = "sb_publishable_UJRx_Z0EDrVQI6zCLMDyZg_zd9WDkk-";
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.");
-}
-
-export const supabase = createClient(
-  supabaseUrl || "https://configuracao-ausente.supabase.co",
-  supabaseAnonKey || "configuracao-ausente",
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: "meu-consultor-ia-auth",
   },
-);
+});
 
 const defaultPillars = {
   conhecimento: 0,
@@ -61,7 +54,10 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (error) throw new Error(`Erro ao carregar perfil: ${error.message}`);
+  if (error) {
+    console.warn("Perfil indisponível; mantendo login:", error.message);
+    return defaultProfile(user);
+  }
 
   if (data) {
     return {
@@ -80,7 +76,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
     display_name: profile.displayName,
     profile_data: profile,
   });
-  if (insertError) throw new Error(`Erro ao criar perfil: ${insertError.message}`);
+  if (insertError) console.warn("Não foi possível criar o perfil:", insertError.message);
   return profile;
 }
 
@@ -94,19 +90,15 @@ class SupabaseAuthAdapter {
   }
 
   private async applySession(session: Session | null) {
-    try {
-      this.currentUser = session?.user ? await loadOrCreateProfile(session.user) : null;
-    } catch (error) {
-      console.error(error);
-      this.currentUser = null;
-    }
+    this.currentUser = session?.user ? await loadOrCreateProfile(session.user) : null;
     this.listeners.forEach((listener) => listener(this.currentUser));
   }
 
   private async initialize() {
     if (this.initialized) return;
     this.initialized = true;
-    const { data } = await supabase.auth.getSession();
+    const { data, error } = await supabase.auth.getSession();
+    if (error) console.error("Erro ao recuperar sessão:", error.message);
     await this.applySession(data.session);
     supabase.auth.onAuthStateChange((_event, session) => {
       window.setTimeout(() => void this.applySession(session), 0);
@@ -127,12 +119,10 @@ class SupabaseAuthAdapter {
       password,
     });
     if (error) {
-      if (error.message.toLowerCase().includes("invalid login credentials")) {
-        throw new Error("E-mail ou senha incorretos.");
-      }
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        throw new Error("Confirme seu e-mail antes de entrar. Verifique também a caixa de spam.");
-      }
+      const message = error.message.toLowerCase();
+      if (message.includes("invalid login credentials")) throw new Error("E-mail ou senha incorretos.");
+      if (message.includes("email not confirmed")) throw new Error("Confirme seu e-mail antes de entrar.");
+      if (message.includes("failed to fetch")) throw new Error("Não foi possível conectar ao servidor de autenticação.");
       throw new Error(error.message);
     }
     await this.applySession(data.session);
@@ -140,11 +130,10 @@ class SupabaseAuthAdapter {
   }
 
   async createUserWithEmailAndPassword(email: string, password: string) {
-    const redirectTo = `${window.location.origin}/`;
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: { emailRedirectTo: redirectTo },
+      options: { emailRedirectTo: `${window.location.origin}/` },
     });
     if (error) throw new Error(error.message);
     if (data.session) await this.applySession(data.session);
