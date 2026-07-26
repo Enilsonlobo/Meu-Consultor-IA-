@@ -4,6 +4,7 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 
 const SUPABASE_URL = 'https://fldhvvwcjxwnutkjanud.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_UJRx_Z0EDrVQI6zCLMDyZg_zd9WDkk-';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -11,7 +12,7 @@ export default defineConfig(({ mode }) => {
     env.VITE_SUPABASE_ANON_KEY ||
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    '';
+    SUPABASE_PUBLISHABLE_KEY;
 
   return {
     plugins: [react(), tailwindcss()],
