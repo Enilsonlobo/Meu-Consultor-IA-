@@ -15,15 +15,10 @@ const emptyPillars = {
 function profileFromUser(user: User): UserProfile {
   const metadata = user.user_metadata || {};
   const now = new Date().toISOString();
-
   return {
     uid: user.id,
     email: user.email || "",
-    displayName:
-      metadata.display_name ||
-      metadata.full_name ||
-      user.email?.split("@")[0] ||
-      "Usuário",
+    displayName: metadata.display_name || metadata.full_name || user.email?.split("@")[0] || "Usuário",
     empresa: metadata.empresa || "",
     segmento: metadata.segmento || "",
     cidade: metadata.cidade || "",
@@ -43,7 +38,6 @@ function profileFromUser(user: User): UserProfile {
 
 async function getProfile(user: User): Promise<UserProfile> {
   const fallback = profileFromUser(user);
-
   try {
     const { data, error } = await supabase
       .from("profiles")
@@ -73,15 +67,28 @@ async function getProfile(user: User): Promise<UserProfile> {
       ...(data.profile_data || {}),
       uid: user.id,
       email: user.email || data.email || "",
-      displayName:
-        data.display_name ||
-        data.profile_data?.displayName ||
-        fallback.displayName,
+      displayName: data.display_name || data.profile_data?.displayName || fallback.displayName,
     };
   } catch (error) {
     console.warn("Falha inesperada ao carregar perfil; login mantido:", error);
     return fallback;
   }
+}
+
+function installAuthorizedApiFetch() {
+  if (typeof window === "undefined" || (window as any).__mciAuthorizedFetchInstalled) return;
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    if (!url.startsWith("/api/")) return nativeFetch(input, init);
+
+    const { data } = await supabase.auth.getSession();
+    const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
+    if (data.session?.access_token) headers.set("Authorization", `Bearer ${data.session.access_token}`);
+    if (!headers.has("Content-Type") && init.body) headers.set("Content-Type", "application/json");
+    return nativeFetch(input, { ...init, headers });
+  };
+  (window as any).__mciAuthorizedFetchInstalled = true;
 }
 
 class ReliableAuth {
@@ -90,6 +97,7 @@ class ReliableAuth {
   private ready = false;
 
   constructor() {
+    installAuthorizedApiFetch();
     void this.initialize();
   }
 
@@ -107,7 +115,6 @@ class ReliableAuth {
     const { data, error } = await supabase.auth.getSession();
     if (error) console.error("Erro ao recuperar sessão:", error.message);
     await this.applyUser(data.session?.user || null);
-
     supabase.auth.onAuthStateChange((_event, session) => {
       window.setTimeout(() => void this.applyUser(session?.user || null), 0);
     });
@@ -120,22 +127,13 @@ class ReliableAuth {
   }
 
   async signInWithEmailAndPassword(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
     if (error) {
       const message = error.message.toLowerCase();
-      if (message.includes("invalid login credentials")) {
-        throw new Error("E-mail ou senha incorretos.");
-      }
-      if (message.includes("email not confirmed")) {
-        throw new Error("Confirme seu e-mail antes de entrar.");
-      }
+      if (message.includes("invalid login credentials")) throw new Error("E-mail ou senha incorretos.");
+      if (message.includes("email not confirmed")) throw new Error("Confirme seu e-mail antes de entrar.");
       throw new Error(error.message);
     }
-
     await this.applyUser(data.user);
     return data;
   }
@@ -152,10 +150,7 @@ class ReliableAuth {
   }
 
   async sendPasswordResetEmail(email: string) {
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      email.trim().toLowerCase(),
-      { redirectTo: `${window.location.origin}/` },
-    );
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: `${window.location.origin}/` });
     if (error) throw new Error(error.message);
     return true;
   }
@@ -169,14 +164,7 @@ class ReliableAuth {
   async updateProfileData(changes: Partial<UserProfile>) {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
-
-    const next = {
-      ...(this.currentUser || profileFromUser(data.user)),
-      ...changes,
-      uid: data.user.id,
-      email: data.user.email || "",
-    };
-
+    const next = { ...(this.currentUser || profileFromUser(data.user)), ...changes, uid: data.user.id, email: data.user.email || "" };
     const { error: profileError } = await supabase.from("profiles").upsert({
       id: data.user.id,
       email: next.email,
@@ -185,7 +173,6 @@ class ReliableAuth {
       updated_at: new Date().toISOString(),
     });
     if (profileError) throw new Error(profileError.message);
-
     this.currentUser = next;
     this.emit();
   }
