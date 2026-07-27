@@ -15,7 +15,7 @@ import {
 import type { UserProfile } from "../types";
 
 interface SalesDirectorProps {
-  profile: UserProfile;
+  profile?: Partial<UserProfile>;
 }
 
 function currency(value: number) {
@@ -69,7 +69,7 @@ export const SalesDirector: React.FC<SalesDirectorProps> = ({ profile }) => {
     const base = [
       "Revisar os contatos pendentes e responder todos em até 10 minutos.",
       `Buscar pelo menos ${Math.max(5, plan.dailySales * 5)} novas conversas comerciais hoje.`,
-      `Apresentar uma oferta clara com benefício, prazo e chamada para ação.`,
+      "Apresentar uma oferta clara com benefício, prazo e chamada para ação.",
       "Registrar cada oportunidade e definir a próxima ação antes de encerrar o atendimento.",
       "Encerrar o dia conferindo contatos, propostas, vendas e motivos de perda.",
     ];
@@ -104,7 +104,7 @@ export const SalesDirector: React.FC<SalesDirectorProps> = ({ profile }) => {
             </div>
             <h1 className="mt-5 text-3xl md:text-4xl font-black text-white">Transforme sua meta mensal em ações diárias</h1>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-400">
-              Informe os números atuais de {profile.empresa || "sua empresa"}. O sistema calcula quanto falta vender, distribui a meta e cria um plano simples de execução.
+              Informe os números atuais de {profile?.empresa || "sua empresa"}. O sistema calcula quanto falta vender, distribui a meta e cria um plano simples de execução.
             </p>
           </div>
           <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl border border-emerald-500/20 bg-emerald-500/10"><CircleDollarSign className="h-10 w-10 text-emerald-400" /></div>
