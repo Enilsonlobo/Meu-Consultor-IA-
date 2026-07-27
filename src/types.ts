@@ -19,13 +19,13 @@ export interface Consultant {
 }
 
 export interface CrescerPillars {
-  conhecimento: number;    // 0-100
-  relacionamento: number;  // 0-100
-  estrategia: number;      // 0-100
-  sistema: number;         // 0-100
-  comunicacao: number;     // 0-100
-  eficiencia: number;      // 0-100
-  resultados: number;      // 0-100
+  conhecimento: number;
+  relacionamento: number;
+  estrategia: number;
+  sistema: number;
+  comunicacao: number;
+  eficiencia: number;
+  resultados: number;
 }
 
 export interface UserProfile {
@@ -39,7 +39,7 @@ export interface UserProfile {
   funcionarios: string;
   faturamento: string;
   objetivos: string;
-  scoreCrescer: number; // overall average of the pillars
+  scoreCrescer: number;
   ultimoAcesso: string;
   ultimoDiagnostico: string;
   plan: 'Membro' | 'Premium' | 'Enterprise';
@@ -81,13 +81,13 @@ export interface DiagnosticSession {
   id: string;
   userId: string;
   currentStep: number;
-  answers: Record<string, string>; // questionId -> response value
+  answers: Record<string, string>;
   scoreCrescer: number;
   pillars: CrescerPillars;
   completed: boolean;
   createdAt: string;
   updatedAt: string;
-  report?: string; // Markdown formatted corporate report
+  report?: string;
 }
 
 export interface CompetitionAnalysis {
@@ -96,8 +96,28 @@ export interface CompetitionAnalysis {
   empresa: string;
   segmento: string;
   cidade: string;
-  analysisText: string; // Markdown formatted report
+  analysisText: string;
   createdAt: string;
+}
+
+export type ActionTaskStatus = 'todo' | 'doing' | 'done';
+export type ActionTaskPriority = 'alta' | 'media' | 'baixa';
+export type ActionTaskSource = 'diagnostico' | 'instagram' | 'manual';
+
+export interface ActionPlanTask {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  pillar: keyof CrescerPillars | 'marketing' | 'vendas' | 'gestao';
+  status: ActionTaskStatus;
+  priority: ActionTaskPriority;
+  source: ActionTaskSource;
+  dueDate: string;
+  checklist: Array<{ id: string; text: string; done: boolean }>;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
 }
 
 export interface InstagramAuditSession {
@@ -135,7 +155,7 @@ export interface InstagramAuditSession {
     gatilho: string;
     replicacao: string;
   }>;
-  hooks: string[]; // exactly 20 hooks of 10 words
+  hooks: string[];
   ideiasConteudo: Array<{
     titulo: string;
     formato: string;
