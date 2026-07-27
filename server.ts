@@ -8,15 +8,21 @@ import { createClient } from "@supabase/supabase-js";
 dotenv.config();
 
 const app = express();
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "8mb" }));
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+const imageModel = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
 const supabaseServer = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false, autoRefreshToken: false } })
   : null;
+
+function getOpenAI() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY não configurada na Vercel.");
+  return new OpenAI({ apiKey });
+}
 
 const SYSTEM = `Você é o Meu Consultor IA®, consultor empresarial para pequenas empresas brasileiras. Responda sempre em português do Brasil, com linguagem clara, profissional e prática. Personalize pelo segmento, cidade, porte, faturamento e objetivo informados. Não invente fatos, métricas ou pesquisas. Estruture respostas importantes em: Resumo, Diagnóstico, Prioridade, Plano de ação (Hoje, Esta semana, Próximos 30 dias), Materiais prontos e Próximo passo. Entregue scripts, mensagens, roteiros e checklists prontos para uso quando forem úteis.`;
 
@@ -30,13 +36,8 @@ async function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-function assertOpenAI() {
-  if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY não configurada na Vercel.");
-}
-
 async function textCompletion(prompt: string, system = SYSTEM) {
-  assertOpenAI();
-  const result = await openai.chat.completions.create({
+  const result = await getOpenAI().chat.completions.create({
     model,
     temperature: 0.55,
     messages: [
@@ -48,8 +49,7 @@ async function textCompletion(prompt: string, system = SYSTEM) {
 }
 
 async function jsonCompletion<T>(prompt: string): Promise<T> {
-  assertOpenAI();
-  const result = await openai.chat.completions.create({
+  const result = await getOpenAI().chat.completions.create({
     model,
     temperature: 0.35,
     response_format: { type: "json_object" },
@@ -58,11 +58,14 @@ async function jsonCompletion<T>(prompt: string): Promise<T> {
       { role: "user", content: prompt },
     ],
   });
-  const raw = result.choices[0]?.message?.content || "{}";
-  return JSON.parse(raw) as T;
+  return JSON.parse(result.choices[0]?.message?.content || "{}") as T;
 }
 
-app.get("/api/health", (_req, res) => res.json({ ok: true, provider: "openai", database: "supabase" }));
+app.get("/api/health", (_req, res) => res.json({
+  ok: true,
+  provider: process.env.OPENAI_API_KEY ? "openai-configured" : "openai-missing",
+  database: supabaseServer ? "supabase-configured" : "supabase-missing",
+}));
 
 app.post("/api/chat", requireAuth, async (req, res) => {
   try {
@@ -70,8 +73,7 @@ app.post("/api/chat", requireAuth, async (req, res) => {
     if (!Array.isArray(messages)) return res.status(400).json({ error: "Mensagens inválidas." });
     const context = profile ? `Empresa: ${profile.empresa || "não informada"}\nSegmento: ${profile.segmento || "não informado"}\nCidade: ${profile.cidade || "não informada"}\nFaturamento: ${profile.faturamento || "não informado"}\nObjetivos: ${profile.objetivos || "não informados"}` : "";
     const history = messages.slice(-16).map((m: any) => `${m.role === "model" ? "CONSULTOR" : "CLIENTE"}: ${String(m.text || "")}`).join("\n\n");
-    const text = await textCompletion(`${context}\n\nCONVERSA:\n${history}`);
-    res.json({ text });
+    res.json({ text: await textCompletion(`${context}\n\nCONVERSA:\n${history}`) });
   } catch (error: any) {
     console.error("/api/chat", error);
     res.status(500).json({ error: error.message || "Erro ao consultar a IA." });
@@ -92,7 +94,8 @@ app.post("/api/report", requireAuth, async (req, res) => {
 app.post("/api/radar", requireAuth, async (req, res) => {
   try {
     const { cidade, segmento, empresa } = req.body || {};
-    const text = await textCompletion(`Produza um radar estratégico de concorrência para a empresa ${empresa || "informada"}, segmento ${segmento || "não informado"}, em ${cidade || "localidade não informada"}. Não afirme ter pesquisado concorrentes reais. Apresente um método de análise, padrões prováveis do mercado, oportunidades de diferenciação, checklist de pesquisa local e plano de 30 dias.`);
+    if (!cidade?.trim() || !segmento?.trim()) return res.status(400).json({ error: "Informe cidade e segmento." });
+    const text = await textCompletion(`Produza um radar estratégico de concorrência para a empresa ${empresa || "informada"}, segmento ${segmento}, em ${cidade}. Não afirme ter pesquisado concorrentes reais. Apresente padrões de mercado, oportunidades de diferenciação, checklist de pesquisa local, comparação estratégica e plano de 30 dias.`);
     res.json({ text });
   } catch (error: any) {
     console.error("/api/radar", error);
@@ -103,7 +106,7 @@ app.post("/api/radar", requireAuth, async (req, res) => {
 app.post("/api/post-generator", requireAuth, async (req, res) => {
   try {
     const { profile, topic, tone } = req.body || {};
-    const data = await jsonCompletion<any>(`Crie conteúdo para um post de Instagram da empresa abaixo.\nEmpresa: ${JSON.stringify(profile)}\nTema: ${topic}\nTom: ${tone}\nRetorne as chaves: headline, subheadline, cta, caption, suggestedStyle. suggestedStyle deve ser exatamente uma destas opções: Sleek Obsidian, Corporate Blue, Emerald Authority, Royal Purple, Minimal Light.`);
+    const data = await jsonCompletion<any>(`Crie conteúdo para um post de Instagram. Empresa: ${JSON.stringify(profile)}. Tema: ${topic}. Tom: ${tone}. Retorne as chaves headline, subheadline, cta, caption, suggestedStyle. suggestedStyle deve ser: Sleek Obsidian, Corporate Blue, Emerald Authority, Royal Purple ou Minimal Light.`);
     res.json({
       headline: String(data.headline || "Transforme sua empresa"),
       subheadline: String(data.subheadline || "Estratégia prática para crescer"),
@@ -120,11 +123,54 @@ app.post("/api/post-generator", requireAuth, async (req, res) => {
 app.post("/api/instagram-audit", requireAuth, async (req, res) => {
   try {
     const { username, empresa, segmento, publicoAlvo, desafio } = req.body || {};
-    const data = await jsonCompletion<any>(`Faça uma auditoria estratégica orientativa do Instagram com base apenas nas informações fornecidas; não diga que acessou ou analisou o perfil real. Usuário: ${username}. Empresa: ${empresa}. Segmento: ${segmento}. Público: ${publicoAlvo}. Desafio: ${desafio}. Retorne JSON com: scoreGeral (número 0-100), diagnostico (texto), pontosFortes (array de strings), pontosAtencao (array), oportunidades (array), planoAcao (array), bioSugerida (texto), pilaresConteudo (array), calendario7Dias (array de objetos com dia, formato, tema, cta).`);
+    const data = await jsonCompletion<any>(`Faça uma auditoria estratégica orientativa do Instagram apenas com os dados fornecidos; não diga que acessou o perfil real. Usuário: ${username}. Empresa: ${empresa}. Segmento: ${segmento}. Público: ${publicoAlvo}. Desafio: ${desafio}. Retorne JSON com scoreGeral, diagnostico, pontosFortes, pontosAtencao, oportunidades, planoAcao, bioSugerida, pilaresConteudo e calendario7Dias (objetos com dia, formato, tema, cta).`);
     res.json(data);
   } catch (error: any) {
     console.error("/api/instagram-audit", error);
     res.status(500).json({ error: error.message || "Erro ao gerar auditoria." });
+  }
+});
+
+app.post("/api/art-usage", requireAuth, async (_req, res) => {
+  res.json({ used: 0, remaining: 8, limit: 8, admin: false });
+});
+
+app.post("/api/art-history", requireAuth, async (_req, res) => {
+  res.json({ items: [] });
+});
+
+app.post("/api/improve-art-prompt", requireAuth, async (req, res) => {
+  try {
+    const { prompt, format, profile } = req.body || {};
+    if (!prompt?.trim()) return res.status(400).json({ error: "Descreva a arte desejada." });
+    const improved = await textCompletion(`Transforme a ideia abaixo em um briefing visual detalhado para geração de imagem publicitária. Não inclua textos longos dentro da imagem. Empresa: ${JSON.stringify(profile)}. Formato: ${format}. Ideia: ${prompt}. Retorne somente o briefing aprimorado, em português.`);
+    res.json({ prompt: improved });
+  } catch (error: any) {
+    console.error("/api/improve-art-prompt", error);
+    res.status(500).json({ error: error.message || "Erro ao aprimorar o briefing." });
+  }
+});
+
+app.post("/api/generate-art", requireAuth, async (req, res) => {
+  try {
+    const { prompt, format, quality, profile } = req.body || {};
+    if (!prompt?.trim()) return res.status(400).json({ error: "Descreva a arte desejada." });
+    const size = format === "feed" ? "1024x1024" : format === "landscape" ? "1536x1024" : "1024x1536";
+    const fullPrompt = `Crie uma arte publicitária profissional, limpa e de alta conversão. Empresa: ${profile?.empresa || "empresa brasileira"}. Segmento: ${profile?.segmento || "serviços"}. Briefing: ${prompt}. Composição adequada ao formato ${format}. Evite logotipos inventados, marcas d'água e textos ilegíveis.`;
+    const result = await getOpenAI().images.generate({
+      model: imageModel,
+      prompt: fullPrompt,
+      size: size as any,
+      quality: quality === "high" ? "high" : "medium",
+      output_format: "png",
+    } as any);
+    const item: any = result.data?.[0];
+    const image = item?.b64_json ? `data:image/png;base64,${item.b64_json}` : item?.url;
+    if (!image) throw new Error("A IA não retornou a imagem.");
+    res.json({ image, used: 1, remaining: 7, limit: 8, admin: false });
+  } catch (error: any) {
+    console.error("/api/generate-art", error);
+    res.status(500).json({ error: error.message || "Erro ao gerar a arte." });
   }
 });
 
