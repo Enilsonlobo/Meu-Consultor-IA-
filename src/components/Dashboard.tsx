@@ -8,15 +8,21 @@ import {
   FileText,
   Image as ImageIcon,
   Instagram,
+  ListChecks,
   MapPin,
   MessageSquare,
-  Radar,
   Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
 import { db } from "../firebase";
-import type { CrescerPillars, DiagnosticSession, InstagramAuditSession, UserProfile } from "../types";
+import type {
+  ActionPlanTask,
+  CrescerPillars,
+  DiagnosticSession,
+  InstagramAuditSession,
+  UserProfile,
+} from "../types";
 import type { SidebarTab } from "./Sidebar";
 
 interface DashboardProps {
@@ -29,6 +35,9 @@ interface DashboardStats {
   diagnostics: number;
   audits: number;
   chats: number;
+  tasks: number;
+  completedTasks: number;
+  taskProgress: number;
   lastAuditScore: number | null;
   lastActivity: string | null;
 }
@@ -55,6 +64,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) =>
     diagnostics: 0,
     audits: 0,
     chats: 0,
+    tasks: 0,
+    completedTasks: 0,
+    taskProgress: 0,
     lastAuditScore: null,
     lastActivity: null,
   });
@@ -64,20 +76,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) =>
     let active = true;
     async function loadStats() {
       try {
-        const [diagnostics, audits, chats] = await Promise.all([
+        const [diagnostics, audits, chats, actionTasks] = await Promise.all([
           db.getDocs("diagnostics", [{ field: "userId", val: profile.uid }]),
           db.getDocs("instagram_audits", [{ field: "userId", val: profile.uid }]),
           db.getDocs("chats", [{ field: "userId", val: profile.uid }]),
+          db.getDocs("action_tasks", [{ field: "userId", val: profile.uid }]),
         ]);
 
         const diagnosticItems = diagnostics as DiagnosticSession[];
         const auditItems = audits as InstagramAuditSession[];
+        const taskItems = actionTasks as ActionPlanTask[];
+        const completedTasks = taskItems.filter((item) => item.status === "done").length;
         const latestAudit = [...auditItems].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )[0];
         const activityDates = [
           ...diagnosticItems.map((item) => item.updatedAt || item.createdAt),
           ...auditItems.map((item) => item.createdAt),
+          ...taskItems.map((item) => item.updatedAt || item.createdAt),
         ].filter(Boolean);
         const latestActivity = activityDates.sort(
           (a, b) => new Date(b).getTime() - new Date(a).getTime()
@@ -88,6 +104,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) =>
             diagnostics: diagnosticItems.length,
             audits: auditItems.length,
             chats: chats.length,
+            tasks: taskItems.length,
+            completedTasks,
+            taskProgress: taskItems.length ? Math.round((completedTasks / taskItems.length) * 100) : 0,
             lastAuditScore: latestAudit ? Number(latestAudit.scoreGeral || 0) : null,
             lastActivity: latestActivity,
           });
@@ -98,7 +117,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) =>
         if (active) setLoadingStats(false);
       }
     }
-    loadStats();
+    void loadStats();
     return () => {
       active = false;
     };
@@ -143,8 +162,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) =>
   const executiveIndicators = [
     { label: "Diagnósticos", value: stats.diagnostics, icon: Target, tab: "relatorios" as SidebarTab, description: "avaliações empresariais" },
     { label: "Auditorias", value: stats.audits, icon: Instagram, tab: "instagram_audits" as SidebarTab, description: "análises de Instagram" },
-    { label: "Conversas", value: stats.chats, icon: MessageSquare, tab: "chat" as SidebarTab, description: "sessões estratégicas" },
-    { label: "Score Instagram", value: stats.lastAuditScore === null ? "—" : stats.lastAuditScore, icon: TrendingUp, tab: "instagram_audits" as SidebarTab, description: "última auditoria" },
+    { label: "Tarefas", value: stats.tasks, icon: ListChecks, tab: "plano" as SidebarTab, description: `${stats.completedTasks} concluídas` },
+    { label: "Execução", value: `${stats.taskProgress}%`, icon: TrendingUp, tab: "plano" as SidebarTab, description: "progresso do plano" },
   ];
 
   return (
@@ -264,7 +283,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, onTabChange }) =>
 
       <section className="rounded-3xl border border-slate-800 bg-slate-950 p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="flex items-start gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10"><FileText className="h-6 w-6 text-indigo-400" /></div><div><h2 className="text-base font-black text-white">Toda a jornada organizada</h2><p className="mt-2 max-w-2xl text-xs leading-relaxed text-slate-500">Centralize diagnósticos, conversas, relatórios, auditorias e materiais para acompanhar a evolução do negócio.</p></div></div>
+          <div className="flex items-start gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-500/10"><FileText className="h-6 w-6 text-indigo-400" /></div><div><h2 className="text-base font-black text-white">Toda a jornada organizada</h2><p className="mt-2 max-w-2xl text-xs leading-relaxed text-slate-500">Centralize diagnósticos, conversas, relatórios, auditorias, tarefas e materiais para acompanhar a evolução do negócio.</p></div></div>
           <button type="button" onClick={() => onTabChange("historico")} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-5 py-3 text-xs font-black text-slate-200 transition hover:border-indigo-500 hover:text-white">Ver histórico <ArrowRight className="h-4 w-4" /></button>
         </div>
       </section>
