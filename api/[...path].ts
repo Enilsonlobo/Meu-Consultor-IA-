@@ -90,12 +90,15 @@ function imageSize(format: string): "1024x1024" | "1024x1536" | "1536x1024" {
   return "1024x1024";
 }
 
+function isOwner(user?: User) {
+  return user?.email?.toLowerCase() === "enilsonlobo32@gmail.com";
+}
+
 app.get("/api/health", (_req, res) => res.json({ ok: true, provider: "openai", database: "supabase" }));
 
 app.post("/api/art-usage", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const isAdmin = req.user?.email?.toLowerCase() === "enilsonlobo32@gmail.com";
-    if (isAdmin) return res.json({ used: 0, remaining: 8, limit: 8, admin: true });
+    if (isOwner(req.user)) return res.json({ used: 0, remaining: 8, limit: 8, admin: true });
     const client = userSupabase(req.accessToken!);
     const { count, error } = await client
       .from("app_records")
@@ -112,6 +115,49 @@ app.post("/api/art-usage", requireAuth, async (req: AuthenticatedRequest, res) =
   }
 });
 
+app.post("/api/improve-art-prompt", requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { prompt, profile, format = "feed" } = req.body || {};
+    if (!prompt || String(prompt).trim().length < 5) {
+      return res.status(400).json({ error: "Escreva uma ideia inicial para a IA aprimorar." });
+    }
+    const improvedPrompt = await textCompletion(
+      `Transforme a ideia abaixo em um briefing visual profissional para geração de UMA peça publicitária. Preserve a intenção do cliente, não invente descontos, preços, telefones, endereços ou promessas. O briefing final deve ser direto, em um único parágrafo, com até 900 caracteres, incluindo composição, cenário, público, estilo, iluminação, cores, hierarquia e texto exato na arte quando houver. Não escreva introdução, título, aspas ou explicações.\n\nEmpresa: ${profile?.empresa || "não informada"}\nSegmento: ${profile?.segmento || "não informado"}\nCidade: ${profile?.cidade || "não informada"}\nFormato: ${format}\nIdeia original: ${String(prompt).trim()}`,
+      "Você é um diretor de criação publicitária brasileiro especializado em transformar ideias simples em briefings visuais claros para geração de imagens por IA. Responda somente com o briefing final em português do Brasil."
+    );
+    res.json({ prompt: improvedPrompt });
+  } catch (error: any) {
+    console.error("/api/improve-art-prompt", error);
+    res.status(500).json({ error: error.message || "Erro ao aprimorar o briefing." });
+  }
+});
+
+app.post("/api/art-history", requireAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const client = userSupabase(req.accessToken!);
+    const { data, error } = await client
+      .from("app_records")
+      .select("id, data, created_at")
+      .eq("collection", "art_generations")
+      .eq("user_id", req.user!.id)
+      .order("created_at", { ascending: false })
+      .limit(6);
+    if (error) throw error;
+    res.json({
+      items: (data || []).map((item: any) => ({
+        id: item.id,
+        prompt: item.data?.prompt || "",
+        format: item.data?.format || "feed",
+        quality: item.data?.quality || "medium",
+        createdAt: item.created_at || item.data?.createdAt,
+      })),
+    });
+  } catch (error: any) {
+    console.error("/api/art-history", error);
+    res.status(500).json({ error: error.message || "Erro ao carregar criações recentes." });
+  }
+});
+
 app.post("/api/generate-art", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     assertOpenAI();
@@ -120,9 +166,9 @@ app.post("/api/generate-art", requireAuth, async (req: AuthenticatedRequest, res
       return res.status(400).json({ error: "Descreva a arte com pelo menos 12 caracteres." });
     }
 
-    const isAdmin = req.user?.email?.toLowerCase() === "enilsonlobo32@gmail.com";
+    const admin = isOwner(req.user);
     const client = userSupabase(req.accessToken!);
-    if (!isAdmin) {
+    if (!admin) {
       const { count, error } = await client
         .from("app_records")
         .select("id", { count: "exact", head: true })
@@ -138,7 +184,7 @@ app.post("/api/generate-art", requireAuth, async (req: AuthenticatedRequest, res
     const businessContext = profile
       ? `Marca: ${profile.empresa || "não informada"}. Segmento: ${profile.segmento || "não informado"}. Cidade: ${profile.cidade || "não informada"}.`
       : "";
-    const finalPrompt = `Crie uma peça publicitária profissional, original e de alto nível visual para uma empresa brasileira. ${businessContext}\nBriefing livre do cliente: ${String(prompt).trim()}\nA composição deve ter acabamento de agência, hierarquia visual clara, excelente legibilidade, iluminação e detalhes realistas quando houver pessoas ou produtos. Não use logotipos de terceiros, marcas d'água, assinaturas ou textos aleatórios. Caso o briefing peça texto na arte, escreva somente o texto solicitado em português do Brasil e revise a ortografia.`;
+    const finalPrompt = `Crie UMA peça publicitária profissional, original e de alto nível visual para uma empresa brasileira. ${businessContext}\nBriefing livre do cliente: ${String(prompt).trim()}\nA composição deve ter acabamento de agência, hierarquia visual clara, excelente legibilidade, iluminação e detalhes realistas quando houver pessoas ou produtos. Não use logotipos de terceiros, marcas d'água, assinaturas ou textos aleatórios. Caso o briefing peça texto na arte, escreva somente o texto solicitado em português do Brasil e revise a ortografia. Não crie colagens, sequências, comparativos ou múltiplas versões na mesma imagem.`;
 
     const result = await openai.images.generate({
       model: process.env.OPENAI_IMAGE_MODEL || "gpt-image-1",
@@ -165,7 +211,7 @@ app.post("/api/generate-art", requireAuth, async (req: AuthenticatedRequest, res
     if (saveError) console.warn("Não foi possível registrar o uso da arte:", saveError.message);
 
     let used = 0;
-    if (!isAdmin) {
+    if (!admin) {
       const { count } = await client
         .from("app_records")
         .select("id", { count: "exact", head: true })
@@ -178,9 +224,9 @@ app.post("/api/generate-art", requireAuth, async (req: AuthenticatedRequest, res
     res.json({
       image: `data:image/png;base64,${imageBase64}`,
       used,
-      remaining: isAdmin ? 8 : Math.max(0, 8 - used),
+      remaining: admin ? 8 : Math.max(0, 8 - used),
       limit: 8,
-      admin: isAdmin,
+      admin,
     });
   } catch (error: any) {
     console.error("/api/generate-art", error);
