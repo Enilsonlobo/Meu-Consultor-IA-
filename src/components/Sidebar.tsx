@@ -16,7 +16,8 @@ import {
   Palette,
   Instagram,
   Rocket,
-  ChevronRight
+  ChevronRight,
+  TrendingUp
 } from "lucide-react";
 
 export type SidebarTab =
@@ -25,6 +26,7 @@ export type SidebarTab =
   | "diagnostico"
   | "radar"
   | "plano"
+  | "vendas"
   | "relatorios"
   | "artes"
   | "instagram_audits"
@@ -56,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "dashboard", label: "Visão geral", description: "Veja prioridades e próximos passos", icon: LayoutDashboard },
     { id: "chat", label: "Conversar com a IA", description: "Tire dúvidas e crie estratégias", icon: MessageSquare },
     { id: "diagnostico", label: "Diagnóstico da empresa", description: "Descubra o que precisa melhorar", icon: Target },
+    { id: "vendas", label: "Diretor Comercial IA", description: "Calcule metas e organize as vendas", icon: TrendingUp },
     { id: "plano", label: "Meu plano de ação", description: "Organize e execute suas tarefas", icon: CheckSquare },
     { id: "artes", label: "Marketing Studio", description: "Crie posts, anúncios e campanhas", icon: Palette },
     { id: "instagram_audits", label: "Meu Instagram", description: "Analise seu perfil e conteúdo", icon: Instagram },
